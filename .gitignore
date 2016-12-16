@@ -115,3 +115,10 @@ $RECYCLE.BIN/
 
 # Windows shortcuts
 *.lnk
+
+*.txt
+*.tlm
+#ignore file with no extension
+*.
+
+
