@@ -757,13 +757,6 @@ begin
     SetLength(Buffer[iGeneralTh], DataStep);
     ZeroMemory(Buffer[iGeneralTh], DataStep * SizeOf(SHORT));
   end;
-
-  // запустим поток сбора данных
-  hReadThread := BeginThread(nil, 0, @Tacp.ReadThread, nil, 0, ReadTid);
-  if hReadThread = THANDLE(nil) then
-  begin
-    AbortProgram('Не могу запустить поток сбора данных!');
-  end;
 end;
 //==============================================================================
 

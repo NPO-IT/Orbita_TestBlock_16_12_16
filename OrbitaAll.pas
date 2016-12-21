@@ -2444,13 +2444,20 @@ begin
           acp.CreateApc;
           //включаем сбор данных с АЦП
           pModule.START_ADC();
-          //boolFlg:=true;
+          boolFlg:=true;
         end
         else
         begin
-          //acp := Tacp.InitApc;
+          acp := Tacp.InitApc;
           //
-          //pModule.START_ADC();
+          pModule.START_ADC();
+        end;
+
+        // запустим поток сбора данных
+        hReadThread := BeginThread(nil, 0, @Tacp.ReadThread, nil, 0, ReadTid);
+        if hReadThread = THANDLE(nil) then
+        begin
+          //AbortProgram('Не могу запустить поток сбора данных!');
         end;
       end
       else
@@ -2465,7 +2472,34 @@ begin
     else
     //стоп
     begin
+      form1.startReadACP.Caption:= 'Прием';
       graphFlagFastP := false;
+      sleep(50);
+      pModule.STOP_ADC();
+      flagEnd:=true;
+      wait(20);
+      //объект для работы с сигналом
+      {if infNum=0 then
+      begin
+        dataM16.Free;
+      end
+      else
+      begin
+        dataMoth.Free;
+      end;}
+
+      //ReadThreadErrorNumber:=4;
+      CloseHandle(hReadThread);
+      WaitForSingleObject(hReadThread, 5500);    //INFINITE
+      if hReadThread <> THANDLE(nil) then
+      begin
+
+        Application.ProcessMessages;
+        sleep(500);
+        hReadThread:=THANDLE(nil);
+      end;
+
+      {graphFlagFastP := false;
       //Application.ProcessMessages;
       sleep(50);
       //Application.ProcessMessages;
@@ -2484,7 +2518,7 @@ begin
       WinExec(PChar('OrbitaMAll.exe'), SW_ShowNormal);
       wait(20);
       //завершим приложение по человечески.
-      Application.Terminate;
+      Application.Terminate;}
     end;
   end
   else
