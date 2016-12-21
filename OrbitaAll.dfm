@@ -168,7 +168,7 @@ object Form1: TForm1
     Top = 0
     Width = 903
     Height = 593
-    ActivePage = ts3
+    ActivePage = TabSheet1
     TabOrder = 0
     object TabSheet1: TTabSheet
       Caption = #1052#1077#1076#1083'.'

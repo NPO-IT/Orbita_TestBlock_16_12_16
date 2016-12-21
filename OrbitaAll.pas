@@ -2570,13 +2570,14 @@ begin
       form1.TrackBar1.Enabled := false;
       form1.tlmPSpeed.Enabled:=false;
       form1.saveAdrB.Enabled:=true;
-      //проверим какие адреса каналов надо загружать
-      testNeedsAdrF;
-      //ѕолучение правильного списка адресов
-      GetAddrList;
-      //”становка списка правильных адресов
-      SetOrbAddr;
     end;
+    //проверим какие адреса каналов надо загружать
+    testNeedsAdrF;
+    //ѕолучение правильного списка адресов
+    GetAddrList;
+    //”становка списка правильных адресов
+    SetOrbAddr;
+    GenTestAdrCorrect;
   end
   else
   //такого файла нет. ѕерезапишем его.
