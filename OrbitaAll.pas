@@ -106,6 +106,9 @@ type
     lnsrsSeries11: TLineSeries;
     tmrMKB_Dpart: TTimer;
     tmrF: TTimer;
+    tmrForMKB: TTimer;
+    btn2: TButton;
+    lbl2: TLabel;
     procedure startReadACPClick(Sender: TObject);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure FormCreate(Sender: TObject);
@@ -149,6 +152,8 @@ type
     procedure tmrTestSRN2Timer(Sender: TObject);
     procedure tmrMKB_DpartTimer(Sender: TObject);
     procedure tmrFTimer(Sender: TObject);
+    procedure btn2Click(Sender: TObject);
+    procedure tmrForMKBTimer(Sender: TObject);
   private
     { Private declarations }
   public
@@ -2366,6 +2371,7 @@ procedure TForm1.startReadACPClick(Sender: TObject);
 var
   intPointNum:integer;
 begin
+  intPointNum:=10000;
   //объект для работы с сигналом
   if infNum=0 then
   begin
@@ -2381,6 +2387,7 @@ begin
   //setlength(data.masFastVal, trunc(form1.fastGist.BottomAxis.Maximum)-2);
   //data.masFastVal:=nil;
   //intPointNum:=trunc(form1.fastGist.BottomAxis.Maximum);
+  masFastVal:=nil;
   setlength({data.}masFastVal, intPointNum);
   //проиниц. счетчики для подсч. колич. каждого типа адресов
   //ам
@@ -2411,7 +2418,7 @@ begin
   form1.tempGist.AllowZoom:=False;
   form1.tempGist.AllowPanning:=pmNone;
   //проверим правильность адресов
-  if ({data.}GenTestAdrCorrect) then
+  if (GenTestAdrCorrect) then
   begin
     //объект для работы с ТЛМ
     tlm := Ttlm.CreateTLM;
@@ -2428,7 +2435,7 @@ begin
       //проиниц. флаг выхода из всех циклов
       flagEnd:=false;
       //заполнение массива параметров.
-      if ({data.}FillAdressParam) then
+      if (FillAdressParam) then
       begin
         form1.startReadACP.Caption := 'Стоп';
         //режим работы приема
@@ -2442,23 +2449,19 @@ begin
           acp := Tacp.InitApc;
           //подготовимся к работе с АЦП
           acp.CreateApc;
+
           //включаем сбор данных с АЦП
           pModule.START_ADC();
           boolFlg:=true;
-        end
-        else
+        end;
+        {else
         begin
           acp := Tacp.InitApc;
           //
           pModule.START_ADC();
-        end;
-
-        // запустим поток сбора данных
-        hReadThread := BeginThread(nil, 0, @Tacp.ReadThread, nil, 0, ReadTid);
-        if hReadThread = THANDLE(nil) then
-        begin
-          //AbortProgram('Не могу запустить поток сбора данных!');
-        end;
+        end;}
+        flagACPWork:=True;
+        form1.TimerOutToDia.Enabled:=true;
       end
       else
       begin
@@ -2472,33 +2475,48 @@ begin
     else
     //стоп
     begin
+      flagEnd:=true;
+      flagACPWork:=False;
+      Form1.mmoTestResult.Clear;
       form1.startReadACP.Caption:= 'Прием';
       graphFlagFastP := false;
-      sleep(50);
-      pModule.STOP_ADC();
-      flagEnd:=true;
-      wait(20);
-      //объект для работы с сигналом
-      {if infNum=0 then
+      //sleep(50);
+      //pModule.STOP_ADC();
+
+      //wait(50);
+
+      flagACPWork:=False;
+      //wait(50);
+
+       //объект для работы с сигналом
+      if infNum=0 then
       begin
-        dataM16.Free;
+        FreeAndNil(dataM16);
       end
       else
       begin
-        dataMoth.Free;
-      end;}
+        FreeAndNil(dataMoth);
+      end;
+      FreeAndNil(tlm);
 
+      form1.diaSlowAnl.Series[0].Clear;
+      form1.gistSlowAnl.Series[0].Clear;
+      form1.diaSlowCont.Series[0].Clear;
+      form1.fastDia.Series[0].Clear;
+      form1.fastGist.Series[0].Clear;
+      Form1.tempDia.Series[0].Clear;
+      Form1.tempGist.Series[0].Clear;
+      
       //ReadThreadErrorNumber:=4;
-      CloseHandle(hReadThread);
+      {CloseHandle(hReadThread);
       WaitForSingleObject(hReadThread, 5500);    //INFINITE
       if hReadThread <> THANDLE(nil) then
       begin
-
         Application.ProcessMessages;
         sleep(500);
         hReadThread:=THANDLE(nil);
       end;
-
+      orbOkCounter:=0;}
       {graphFlagFastP := false;
       //Application.ProcessMessages;
       sleep(50);
@@ -2553,8 +2571,8 @@ var
   path:string;
 
 begin
+  flagACPWork:=False;
   flagTrue:=false;
-
   orbOk:=False;
   orbOkCounter:=0;
   boolFlg:=false;
@@ -2676,39 +2694,41 @@ procedure TForm1.TimerOutToDiaTimer(Sender: TObject);
 var
   orbAdrCount: integer;
 begin
-
-  //form1.Memo1.Lines.Add('Таймер!:');
-  //осуществление разбора очередной строки адреса.
-  orbAdrCount := 0;
-  //счетчик для подсчета количества аналоговых каналов
-  {data.}analogAdrCount := 0;
-  //счетчик для подсчета количества контактных каналов
-  {data.}contactAdrCount := 0;
-  //отчистка формы для предидущей группы
-  //form1.diaSlowAnl.Series[0].Clear;
-  form1.diaSlowCont.Series[0].Clear;
-  form1.fastDia.Series[0].Clear;
-
-
-  //sleep(3);
-  //последовательно разбираем строка за строкой адреса
-  //Орбиты, вынимаем нужные значения и выводим на график
-  while orbAdrCount <= iCountMax - 1 do // iCountMax-1
+  if (flagACPWork) then
   begin
-    outToDia(
-      masElemParam[orbAdrCount].numOutElemG,
-      masElemParam[orbAdrCount].stepOutG,
-      masGroupSize,orbAdrCount,
-      masElemParam[orbAdrCount].adressType,
-      masElemParam[orbAdrCount].bitNumber,
-      masElemParam[orbAdrCount].numBusThread,
-      masElemParam[orbAdrCount].adrBus,
-      masElemParam[orbAdrCount].numOutPoint,
-      masElemParam[orbAdrCount].flagGroup,
-      masElemParam[orbAdrCount].flagCikl);
-    inc(orbAdrCount);
-  end;
-  form1.TimerOutToDia.Enabled := false;
+    //form1.Memo1.Lines.Add('Таймер!:');
+    //осуществление разбора очередной строки адреса.
+    orbAdrCount := 0;
+    //счетчик для подсчета количества аналоговых каналов
+    {data.}analogAdrCount := 0;
+    //счетчик для подсчета количества контактных каналов
+    {data.}contactAdrCount := 0;
+    //отчистка формы для предидущей группы
+    //form1.diaSlowAnl.Series[0].Clear;
+    form1.diaSlowCont.Series[0].Clear;
+    form1.fastDia.Series[0].Clear;
+
+
+    //sleep(3);
+    //последовательно разбираем строка за строкой адреса
+    //Орбиты, вынимаем нужные значения и выводим на график
+    while orbAdrCount <= iCountMax - 1 do // iCountMax-1
+    begin
+      outToDia(
+        masElemParam[orbAdrCount].numOutElemG,
+        masElemParam[orbAdrCount].stepOutG,
+        masGroupSize,orbAdrCount,
+        masElemParam[orbAdrCount].adressType,
+        masElemParam[orbAdrCount].bitNumber,
+        masElemParam[orbAdrCount].numBusThread,
+        masElemParam[orbAdrCount].adrBus,
+        masElemParam[orbAdrCount].numOutPoint,
+        masElemParam[orbAdrCount].flagGroup,
+        masElemParam[orbAdrCount].flagCikl);
+      inc(orbAdrCount);
+    end;
+    form1.TimerOutToDia.Enabled := false; 
+  end; 
 end;
 
 
@@ -3460,6 +3480,10 @@ end;
 
 procedure TForm1.TimerPlayTlmTimer(Sender: TObject);
 begin
+  if (not flagACPWork) then
+  begin
+    Form1.Memo1.Lines.Add('1');
+  end;
   if tlm.fFlag then
   begin
     tlm.ParseBlock(tlm.tlmPlaySpeed)
@@ -3638,6 +3662,10 @@ var
 iBus:integer;
 busArrayLen:Integer;
 begin
+  if (not flagACPWork) then
+  begin
+    Form1.Memo1.Lines.Add('1');
+  end;
   form1.busGist.Series[0].Clear;
   //sleep(3);
   busArrayLen:=length({data.}busArray);
@@ -3767,6 +3795,11 @@ procedure TForm1.tmrContTimer(Sender: TObject);
 var
   orbAdrCount: integer;
 begin
+  if (not flagACPWork) then
+  begin
+    Form1.Memo1.Lines.Add('1');
+  end;
+
   orbAdrCount := 0;
   //счетчик для подсчета количества контактных каналов
   {data.}contactAdrCount := 0;
@@ -3795,6 +3828,8 @@ end;
 
 procedure TForm1.btnAutoTestClick(Sender: TObject);
 begin
+  timeSMKB:=0;
+
   //считаем данные из конфигурационного файла проверки
   //если возникли ошибки то дальше не идем
   Form1.propB.Enabled:=false;
@@ -3803,12 +3838,34 @@ begin
   begin
     if testOnAllTestDevices then
     begin
+      adrTestNum:=3;
+      testNeedsAdrF;
+      form1.PageControl1.ActivePageIndex:=1;
+
+      if (PowerTestConnect) then
+      begin
+        form1.Memo1.Lines.Add('Источник питания АКИП-1105 подключен!');
+        SetOnPowerSupply(1);
+        SetVoltageOnPowerSupply(1,'0000');
+        Delay_S(5);
+        //выставим 27 В
+        SetVoltageOnPowerSupply(1,'2700');
+      end
+      else
+      begin
+        form1.Memo1.Lines.Add('Источник питания АКИП-1105 не подключен!');
+        //flagTestDev:=False;
+      end;
+      //начали прием данных с прибора
+      Form1.startReadACP.Click;  //!!!
+      
+
       //Выставляем адреса МКB2;
-      adrTestNum:=1;
+      {adrTestNum:=1;
       testNeedsAdrF;
       form1.PageControl1.ActivePageIndex:=3;
       //проверка МКБ2
-      TestMKB2;
+      TestMKB2;}
     end
     else
     begin
@@ -5160,6 +5217,19 @@ begin
   end;
 
 
+end;
+
+procedure TForm1.btn2Click(Sender: TObject);
+begin
+  //подача команды НОВ на БВК
+  SendCommandToISD('http://'+ISDip_2+'/type=2num='+inttostr(5)+'val=0');
+  form1.tmrForMKB.Enabled:=True;
+end;
+
+procedure TForm1.tmrForMKBTimer(Sender: TObject);
+begin
+  Form1.lbl2.Caption:=IntToStr(timeSMKB);
+  Inc(timeSMKB);
 end;
 
 end.

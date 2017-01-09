@@ -1,6 +1,6 @@
 object Form1: TForm1
-  Left = 189
-  Top = 122
+  Left = 191
+  Top = 137
   BorderIcons = [biSystemMenu, biMinimize]
   BorderStyle = bsSingle
   Caption = #1057#1087#1077#1094#1080#1072#1083#1100#1085#1086#1077' '#1087#1088#1086#1075#1088#1072#1084#1084#1085#1086#1077' '#1086#1073#1077#1089#1087#1077#1095#1077#1085#1080#1077' '#1086#1073#1088#1072#1073#1086#1090#1082#1080' '#1080' '#1088#1077#1075#1080#1089#1090#1088#1072#1094#1080#1080
@@ -168,7 +168,7 @@ object Form1: TForm1
     Top = 0
     Width = 903
     Height = 593
-    ActivePage = TabSheet1
+    ActivePage = TabSheet2
     TabOrder = 0
     object TabSheet1: TTabSheet
       Caption = #1052#1077#1076#1083'.'
@@ -364,6 +364,13 @@ object Form1: TForm1
         Legend.Visible = False
         View3D = False
         TabOrder = 0
+        object lbl2: TLabel
+          Left = 56
+          Top = 8
+          Width = 16
+          Height = 13
+          Caption = 'lbl2'
+        end
         object Series4: TBarSeries
           Marks.ArrowLength = 20
           Marks.Visible = True
@@ -1255,7 +1262,7 @@ object Form1: TForm1
     Font.Name = 'MS Sans Serif'
     Font.Style = [fsBold]
     ParentFont = False
-    TabOrder = 7
+    TabOrder = 8
     OnClick = startReadACPClick
   end
   object startReadTlmB: TButton
@@ -1270,7 +1277,7 @@ object Form1: TForm1
     Font.Name = 'MS Sans Serif'
     Font.Style = [fsBold]
     ParentFont = False
-    TabOrder = 8
+    TabOrder = 9
     OnClick = startReadTlmBClick
   end
   object propB: TButton
@@ -1301,7 +1308,7 @@ object Form1: TForm1
     Font.Name = 'MS Sans Serif'
     Font.Style = [fsBold]
     ParentFont = False
-    TabOrder = 9
+    TabOrder = 10
     TabStop = True
   end
   object rb2: TRadioButton
@@ -1316,7 +1323,7 @@ object Form1: TForm1
     Font.Name = 'MS Sans Serif'
     Font.Style = [fsBold]
     ParentFont = False
-    TabOrder = 10
+    TabOrder = 11
   end
   object btnAutoTest: TButton
     Left = 1136
@@ -1336,10 +1343,10 @@ object Form1: TForm1
   object mmoTestResult: TMemo
     Left = 1136
     Top = 128
-    Width = 465
+    Width = 449
     Height = 625
     ScrollBars = ssBoth
-    TabOrder = 11
+    TabOrder = 12
   end
   object btn1: TButton
     Left = 1048
@@ -1347,8 +1354,17 @@ object Form1: TForm1
     Width = 75
     Height = 25
     Caption = 'btn1'
-    TabOrder = 12
+    TabOrder = 13
     OnClick = btn1Click
+  end
+  object btn2: TButton
+    Left = 1472
+    Top = 56
+    Width = 75
+    Height = 25
+    Caption = 'btn2'
+    TabOrder = 7
+    OnClick = btn2Click
   end
   object TimerOutToDia: TTimer
     Enabled = False
@@ -1480,6 +1496,12 @@ object Form1: TForm1
     Interval = 10000
     OnTimer = tmrFTimer
     Left = 1416
+    Top = 8
+  end
+  object tmrForMKB: TTimer
+    Enabled = False
+    OnTimer = tmrForMKBTimer
+    Left = 1488
     Top = 8
   end
 end

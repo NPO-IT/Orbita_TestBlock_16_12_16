@@ -1279,6 +1279,10 @@ begin
   fastValT21 := masGroup[nPoint] shr 3; //8 разрядов
   try
     form1.fastDia.Series[0].AddXY(numChanel, fastValT21);
+    {if numChanel=11 then
+    begin
+      Form1.mmoTestResult.Lines.Add('1');
+    end;}
     dataMKB[numChanel+1]:=fastValT21;
   except
     //ShowMessage('222');

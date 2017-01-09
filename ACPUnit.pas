@@ -242,142 +242,147 @@ begin
     exit;
   end;
 
+
+
   //сбор данных
   if pModule.START_ADC() then
   begin
     while hReadThread <> THANDLE(nil) do
     begin
-      RequestNumber := RequestNumber xor $1;
-      // сделаем запрос на очередную порции вводимых данных
-      if not pModule.ReadData(@IoReq[RequestNumber]) then
-      begin
-        ReadThreadErrorNumber := 2;
-        break;
-      end;
-      if not WaitForSingleObject(IoReq[RequestNumber xor $1].Overlapped.hEvent,
-          IoReq[RequestNumber xor $1].TimeOut) = WAIT_TIMEOUT then
-      begin
-        ReadThreadErrorNumber := 3;
-        break;
-      end;
-      // попробуем получить текущее состояние процесса сбора данных
-      if not pModule.GET_DATA_STATE(@DataState) then
-      begin
-        ReadThreadErrorNumber := 7;
-        break;
-      end;
-      // теперь можно проверить этот признак переполнения
-      // внутреннего буфера модуля
-      if (DataState.BufferOverrun = (1 shl BUFFER_OVERRUN_E2010)) then
-      begin
-        ReadThreadErrorNumber := 8;
-        break;
-      end;
-      //При первом проходе считаем пороговое значение
-      //if (not data.modC) then
-      //begin
-        buffDivide := length(buffer[RequestNumber xor $1]);
-        //Высчитываем значения порога для дальнейшего анализа массива.
-        {data.}porog := acp.SignalPorogCalk(Round(buffDivide/10), buffer,RequestNumber); //!!! Round(data.buffDivide/10)
-        //data.modC := true;
-      //end;
-
-     { for m:=1 to 3000 do
-      begin
-      form1.Memo1.Lines.Add(inttostr(m)+'  '+intTostr(buffer[RequestNumber xor $1][m]));
-      end;
-
-
-
-      while (true) do application.processmessages; }
-
-
-
-      //проверяем, что сигнал Орбиты подан.
-      if {data.}porog>200 then
-      begin
-        //Проверяем выбранную информативность
-        indJ := 0;
-        form2.Hide;
-        //M16
-        if infNum = 0 then
+        RequestNumber := RequestNumber xor $1;
+        // сделаем запрос на очередную порции вводимых данных
+        if not pModule.ReadData(@IoReq[RequestNumber]) then
         begin
-          //если не закончена работа с ацп
-          if not flagEnd then
+          ReadThreadErrorNumber := 2;
+          break;
+        end;
+        if not WaitForSingleObject(IoReq[RequestNumber xor $1].Overlapped.hEvent,
+            IoReq[RequestNumber xor $1].TimeOut) = WAIT_TIMEOUT then
+        begin
+          ReadThreadErrorNumber := 3;
+          break;
+        end;
+        // попробуем получить текущее состояние процесса сбора данных
+        if not pModule.GET_DATA_STATE(@DataState) then
+        begin
+          ReadThreadErrorNumber := 7;
+          break;
+        end;
+        // теперь можно проверить этот признак переполнения
+        // внутреннего буфера модуля
+        if (DataState.BufferOverrun = (1 shl BUFFER_OVERRUN_E2010)) then
+        begin
+          ReadThreadErrorNumber := 8;
+          break;
+        end;
+
+        if (flagACPWork) then
+        begin
+          //--
+          Form1.mmoTestResult.Lines.Add('1');
+          //При первом проходе считаем пороговое значение
+          //if (not data.modC) then
+          //begin
+            buffDivide := length(buffer[RequestNumber xor $1]);
+            //Высчитываем значения порога для дальнейшего анализа массива.
+            {data.}porog := acp.SignalPorogCalk(Round(buffDivide/10), buffer,RequestNumber); //!!! Round(data.buffDivide/10)
+            //data.modC := true;
+          //end;
+
+         { for m:=1 to 3000 do
           begin
-            //переписываем данные в кольц буфер.
-            while indJ < buffDivide do
-            begin
-              dataM16.Add(Buffer[RequestNumber xor $1][indJ]);
-              inc(indJ);
-            end;
-            //разбираем М16
-            dataM16.TreatmentM16;
+          form1.Memo1.Lines.Add(inttostr(m)+'  '+intTostr(buffer[RequestNumber xor $1][m]));
           end;
+          while (true) do application.processmessages; }
+
+          //проверяем, что сигнал Орбиты подан.
+          if {data.}porog>200 then
+          begin
+            //Проверяем выбранную информативность
+            indJ := 0;
+            form2.Hide;
+            //M16
+            if infNum = 0 then
+            begin
+              //если не закончена работа с ацп
+              if not flagEnd then
+              begin
+                //переписываем данные в кольц буфер.
+                while indJ < buffDivide do
+                begin
+                  dataM16.Add(Buffer[RequestNumber xor $1][indJ]);
+                  inc(indJ);
+                end;
+                //разбираем М16
+                dataM16.TreatmentM16;
+              end;
+            end
+            //M8,4,2,1
+            else
+            begin
+              if not flagEnd then
+              begin
+                while indJ < buffDivide do
+                begin
+                  dataMoth.WriteToFIFObuf(Buffer[RequestNumber xor $1][indJ]);
+                  inc(indJ);
+                end;
+                //разбираем М8_4_2_1
+                dataMoth.TreatmentM8_4_2_1;
+              end;
+            end;
+          end
+          else
+          begin
+            //CloseFile(textTestFile);
+            {data.graphFlagFastP := false;
+
+            //Application.ProcessMessages;
+            sleep(50);
+            //Application.ProcessMessages;
+
+            if ((form1.tlmWriteB.Enabled)and
+                (not form1.startReadTlmB.Enabled)and
+                (not form1.propB.Enabled))  then
+            begin
+              //остановим работу с АЦП
+              pModule.STOP_ADC();
+            end;
+            //завершим все работающие циклы
+            flagEnd:=true;
+            wait(100); }
+
+            //data.modC := false;
+            form2.show;
+          end;
+
+          //--
+        end;
+
+        // были ли ошибки или пользователь прервал ввод данных?
+        if ReadThreadErrorNumber <> 0 then
+        begin
+          break;
         end
-        //M8,4,2,1
         else
         begin
-          if not flagEnd then
-          begin
-            while indJ < buffDivide do
-            begin
-              dataMoth.WriteToFIFObuf(Buffer[RequestNumber xor $1][indJ]);
-              inc(indJ);
-            end;
-            //разбираем М8_4_2_1
-            dataMoth.TreatmentM8_4_2_1;
-          end;
+          //Sleep(20);
         end;
-      end
-      else
-      begin
-        //CloseFile(textTestFile);
-        {data.graphFlagFastP := false;
 
-        //Application.ProcessMessages;
-        sleep(50);
-        //Application.ProcessMessages;
-
-        if ((form1.tlmWriteB.Enabled)and
-            (not form1.startReadTlmB.Enabled)and
-            (not form1.propB.Enabled))  then
+        // увеличиваем счётчик полученных блоков данных(проходов)
+        inc(countC);
+        {if countC = 12 then
         begin
-          //остановим работу с АЦП
-          pModule.STOP_ADC();
+          form1.Label2.Caption:=IntToStr(countC);
+        end;}
+
+        //сброс счетчика циклов чтения. Для работы вечно=).
+        if (countC = 32767) then
+        begin
+          countC := 0;
         end;
-        //завершим все работающие циклы
-        flagEnd:=true;
-        wait(100); }
+        //form1.Label2.Caption := IntToStr(countC);
 
-        //data.modC := false;
-        form2.show;
-
-      end;
-
-      // были ли ошибки или пользователь прервал ввод данных?
-      if ReadThreadErrorNumber <> 0 then
-      begin
-        break;
-      end
-      else
-      begin
-        //Sleep(20);
-      end;
-
-      // увеличиваем счётчик полученных блоков данных(проходов)
-      inc(countC);
-      {if countC = 12 then
-      begin
-        form1.Label2.Caption:=IntToStr(countC);
-      end;}
-
-      //сброс счетчика циклов чтения. Для работы вечно=).
-      if (countC = 32767) then
-      begin
-        countC := 0;
-      end;
-      //form1.Label2.Caption := IntToStr(countC);
     end;
   //закрываем считывание.Перестаем запрашивать данные.
   end
@@ -756,6 +761,14 @@ begin
   begin
     SetLength(Buffer[iGeneralTh], DataStep);
     ZeroMemory(Buffer[iGeneralTh], DataStep * SizeOf(SHORT));
+  end;
+
+  // запустим поток сбора данных
+  hReadThread := BeginThread(nil, 0, @Tacp.ReadThread, nil, 0, ReadTid);
+  if hReadThread = THANDLE(nil) then
+  begin
+    //AbortProgram('Не могу запустить поток сбора данных!');
+    Form1.Memo1.Lines.Add('Не могу запустить поток сбора данных!');
   end;
 end;
 //==============================================================================

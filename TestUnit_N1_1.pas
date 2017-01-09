@@ -88,6 +88,26 @@ var
    'M16П1A20B60C31D21T21','M16П1A20B60C31D31T21','M16П1A20B60C31D41T21'
   );
 
+  {testStringsBVK:array[1..20] of string=
+  ('M16П1A70B11T22P01','M16П1A70B11T22P02','M16П1A70B21T22P01','M16П1A70B21T22P02',
+   'M16П1A70B31T22P01','M16П1A70B31T22P02','M16П1A70B41T22P01','M16П1A70B41T22P02',
+   'M16П1A20B60C22D11T21','M16П1A20B60C22D21T21','M16П1A20B60C22D31T21',
+   'M16П1A20B60C22D41T21','M16П1A20B80C11T21','M16П1A20B80C21T21',
+   'M16П1A20B80C31T21','M16П1A20B80C41T21','M16П1A20B60C31D11T21',
+   'M16П1A20B60C31D21T21','M16П1A20B60C31D31T21','M16П1A20B60C31D41T21'
+  );}
+
+  testStringsBVK:array[1..32] of string=    //14
+  ('M16П1A70B11T22P01','M16П1A70B11T22P02','M16П1A70B21T22P01','M16П1A70B21T22P02',
+   'M16П1A70B31T22P01','M16П1A70B31T22P02','M16П1A70B41T22P01','M16П1A70B41T22P02',
+   'M16П1A20B60C22D11T21','M16П1A20B60C22D21T21','M16П1A20B60C22D31T21','M16П1A20B60C22D41T21',
+   'M16П1A20B60C22D51T21','M16П1A20B60C22D61T21','M16П1A20B60C22D71T21','M16П1A20B60C22D81T21',
+   'M16П1A20B80C11T21','M16П1A20B80C21T21','M16П1A20B80C31T21','M16П1A20B80C41T21',
+   'M16П1A20B80C51T21','M16П1A20B80C61T21','M16П1A20B80C71T21','M16П1A20B80C81T21',
+   'M16П1A20B60C31D11T21','M16П1A20B60C31D21T21','M16П1A20B60C31D31T21','M16П1A20B60C31D41T21',
+   'M16П1A20B60C31D51T21','M16П1A20B60C31D61T21','M16П1A20B60C31D71T21','M16П1A20B60C31D81T21'
+  );
+
   minScale1:integer=-1;
   maxScale1:Integer=-1;
   minScale2:Integer=-1;
@@ -139,6 +159,8 @@ var
 
   dataMKB:array[1..20]of Integer;
   flagMKBEnd:Boolean=false;
+
+  timeSMKB:Int64=0;
 
   procedure testNeedsAdrF;
   //function Test_1_1_10_2():Boolean;
@@ -215,7 +237,7 @@ begin
   flagTestDev:=True;
 
   //проверка подключения магазина сопротивлений
-  if (not ComTestConect) then
+  {if (not ComTestConect) then
   begin
     flagTestDev:=False;
     form1.Memo1.Lines.Add('Магазин сопротивлений Transmille не подключен!');
@@ -223,7 +245,7 @@ begin
   else
   begin
     form1.Memo1.Lines.Add('Магазин сопротивлений Transmille подключен!');
-  end;
+  end;}
 
   //проверка подключения вольтметра_1
   if (TestConnect(AkipV7_78_1,m_defaultRM_usbtmc_1[0],m_instr_usbtmc_1[0],viAttr_1,Timeout)=-1) then
@@ -254,7 +276,7 @@ begin
 
 
   //проверка подключения источника питания
-  if (PowerTestConnect) then
+  {if (PowerTestConnect) then
   begin
     form1.Memo1.Lines.Add('Источник питания АКИП-1105 подключен!');
     SetOnPowerSupply(1);
@@ -267,7 +289,7 @@ begin
   begin
     form1.Memo1.Lines.Add('Источник питания АКИП-1105 не подключен!');
     flagTestDev:=False;
-  end;
+  end;}
 
   // Проверка ИСД_1--------------------------------------------------------------------------------------------------
   try
@@ -282,7 +304,7 @@ begin
 
 
 
-  // Проверка ИСД_1--------------------------------------------------------------------------------------------------
+  // Проверка ИСД_2--------------------------------------------------------------------------------------------------
   try
       //нелаем неправильный запрос. если ответ есть то ИСД есть
       str:=Form1.IdHTTP2.Get('http://'+ISDip_2);
@@ -296,7 +318,7 @@ begin
   Form1.idpsrvr1.Active:=False;
 
   //проверка подключения генератора
-  if (TestConnect(RigolDg1022_1,m_defaultRM_usbtmc_2[1],m_instr_usbtmc_2[1],viAttr,Timeout)=-1) then
+ { if (TestConnect(RigolDg1022_1,m_defaultRM_usbtmc_2[1],m_instr_usbtmc_2[1],viAttr,Timeout)=-1) then
   begin
     form1.Memo1.Lines.Add('Генератор не подключен!');
     flagTestDev:=False;
@@ -304,8 +326,12 @@ begin
   else
   begin
     form1.Memo1.Lines.Add('Генератор подключен!');
-  end;
-  
+  end;  }
+
+  //замкнули канал для подготовки подачи команды НОВ
+  SendCommandToISD('http://'+ISDip_2+'/type=2num='+inttostr(5)+'val=1');
+
+
   Result:=flagTestDev;
 end;
 
@@ -684,13 +710,13 @@ begin
   case adrTestNum of
     0:
     begin
-      //перезагрузим акт. адреса.
+      //перезагрузим акт. адреса. из файла для отображения
       form1.OrbitaAddresMemo.Lines.LoadFromFile(propStrPath);
     end;
     1:
     begin
-      //загрузим в мемо тестовые адреса для проверки
-      for i:=1 to 20 do
+      //загрузим в мемо тестовые адреса для проверки МКБ
+      for i:=1 to Length(testStringsMKB2) do //20
       begin
         form1.OrbitaAddresMemo.Lines.Add(testStringsMKB2[i]);
       end;
@@ -698,8 +724,8 @@ begin
     end;
     2:
     begin
-      //загрузим в мемо тестовые адреса для проверки
-      for i:=1 to 32 do
+      //загрузим в мемо тестовые адреса для проверки  МКТ
+      for i:=1 to Length(testStringsMKT3) do //32
       begin
         form1.OrbitaAddresMemo.Lines.Add(testStringsMKT3[i]);
       end;
@@ -707,11 +733,25 @@ begin
     end;
     3:
     begin
+      //загрузим в мемо тестовые адреса для проверки  БВК
+      for i:=1 to Length(testStringsBVK) do   //14
+      begin
+        form1.OrbitaAddresMemo.Lines.Add(testStringsBVK[i]);
+      end;
+    end;
+    4:
+    begin
 
     end;
-  end;
+    5:
+    begin
 
+    end;
+    6:
+    begin
 
+    end;
+  end;  
 end;
 
 function getAbsAccuracy(chValOm:double;colibMinOm:Integer;colibMaxOm:Integer;transOm:double):Double;

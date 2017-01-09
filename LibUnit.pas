@@ -202,6 +202,9 @@ var
   //номер выводимой точки на гистограмму
   numP: integer;
   numPfast: integer;
+
+  flagACPWork:Boolean;
+
   
   procedure OutMF(errMF:Integer);
   procedure OutMG(errMG:Integer);
