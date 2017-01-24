@@ -279,7 +279,7 @@ begin
         if (flagACPWork) then
         begin
           //--
-          Form1.mmoTestResult.Lines.Add('1');
+          //Form1.mmoTestResult.Lines.Add('1');
           //При первом проходе считаем пороговое значение
           //if (not data.modC) then
           //begin
@@ -485,7 +485,8 @@ end;
 constructor Tacp.InitApc;
 begin
   //разм. мас АЦП
-  DataStep := 1024 * 1024;
+  //DataStep := 1024 * 1024;
+  DataStep := 32 * 1024;
   //счетчик проходов АЦП
   countC := 0;
   // Инициализация флага ошибки. ошибок нет 0. сбросим флаги ошибки потока ввода
@@ -694,14 +695,16 @@ begin
     //Через какое время время будет приходить ответ с АЦП.
     // 12 Mbit/s
     ap.InterKadrDelay := 0.01;
-    DataStep := 256 * 1024; // размер запроса
+    //DataStep := 256 * 1024; // размер запроса
+    DataStep := 32 * 1024;
   end
   else
   begin
     // межкадровая задержка в мс  . 1/131072= 0.00007. 7 микро секунд.
     // 480 Mbit/s
     ap.InterKadrDelay := 0.0;
-    DataStep := 1024 * 1024; // размер запроса
+    DataStep := 32 * 1024;
+    //DataStep := 1024 * 1024; // размер запроса
   end;
 
   // конфигурим входные каналы . Настройка 4-х аналоговых каналов.

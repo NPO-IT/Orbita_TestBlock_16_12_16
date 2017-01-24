@@ -305,7 +305,7 @@ begin
   begin
     if((wordNum = 1)and(fraseNum=1)and(groupNum=1)and(ciklNum=1))then
     begin
-      startWriteMasGroup := true;
+      //startWriteMasGroup := true;  //!!!
     end;
   end;
 
@@ -645,7 +645,7 @@ begin
               //счетчику cлов в группе начало массива
               //data.groupWordCount:=0;
               //разрешаем запись в массив группы
-              //data.startWriteMasGroup:=true;
+              startWriteMasGroup:=true; ///!!
             end;
 
             //----------------------------

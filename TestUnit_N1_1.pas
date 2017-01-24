@@ -39,6 +39,24 @@ const
   TP_2_MAX2=200;
   TP_2_MIN1=200;
   TP_2_MAX1=400;
+
+  //количество проверяемых каналов на БВК
+  BVK_NUM_TEST_CH=12;
+  //максимальное количество срабатываний для каждого канала
+  BVK_NUM_SETS=3;
+
+
+
+type
+  TBVKCHTestElem = record
+    //массив срабатываний канала, максимально задано 3
+    setTime:array[1..BVK_NUM_SETS] of Cardinal;
+    //массив длительности урония после срабатывания канала
+    durabilityT:array[1..BVK_NUM_SETS] of Cardinal;
+  end;
+
+
+
 var
   IniPeriphery: TIniFile;
   comm1:TComm;
@@ -97,16 +115,110 @@ var
    'M16П1A20B60C31D21T21','M16П1A20B60C31D31T21','M16П1A20B60C31D41T21'
   );}
 
-  testStringsBVK:array[1..32] of string=    //14
+   testStringsBVK:array[1..BVK_NUM_TEST_CH] of string=    //12
   ('M16П1A70B11T22P01','M16П1A70B11T22P02','M16П1A70B21T22P01','M16П1A70B21T22P02',
    'M16П1A70B31T22P01','M16П1A70B31T22P02','M16П1A70B41T22P01','M16П1A70B41T22P02',
-   'M16П1A20B60C22D11T21','M16П1A20B60C22D21T21','M16П1A20B60C22D31T21','M16П1A20B60C22D41T21',
-   'M16П1A20B60C22D51T21','M16П1A20B60C22D61T21','M16П1A20B60C22D71T21','M16П1A20B60C22D81T21',
-   'M16П1A20B80C11T21','M16П1A20B80C21T21','M16П1A20B80C31T21','M16П1A20B80C41T21',
-   'M16П1A20B80C51T21','M16П1A20B80C61T21','M16П1A20B80C71T21','M16П1A20B80C81T21',
-   'M16П1A20B60C31D11T21','M16П1A20B60C31D21T21','M16П1A20B60C31D31T21','M16П1A20B60C31D41T21',
-   'M16П1A20B60C31D51T21','M16П1A20B60C31D61T21','M16П1A20B60C31D71T21','M16П1A20B60C31D81T21'
+   'M16П1A20B60C22D11T21','M16П1A20B60C22D21T21','M16П1A20B60C22D31T21','M16П1A20B60C22D41T21'
   );
+
+  {testStringsBVK:array[1..BVK_NUM_TEST_CH] of string=    //14
+  ('M16П1A70B11T22P01','M16П1A70B11T22P02','M16П1A70B21T22P01','M16П1A70B21T22P02',
+   'M16П1A70B31T22P01','M16П1A70B31T22P02','M16П1A70B41T22P01','M16П1A70B41T22P02',
+   'M16П1A20B60C22D11T21','M16П1A20B60C22D21T21','M16П1A20B60C22D31T21',
+   'M16П1A20B60C22D41T21','M16П1A20B80C11T21','M16П1A20B80C21T21'
+  );}
+
+
+  {testStringsBVK:array[1..20] of string=    //14
+  ('M16П1A70B11T22P01','M16П1A70B11T22P02','M16П1A70B21T22P01','M16П1A70B21T22P02',
+   'M16П1A70B31T22P01','M16П1A70B31T22P02','M16П1A70B41T22P01','M16П1A70B41T22P02',
+   'M16П1A20B60C22D11T21','M16П1A20B60C22D21T21','M16П1A20B60C22D31T21',
+   'M16П1A20B60C22D41T21','M16П1A20B80C11T21','M16П1A20B80C21T21',
+   'M16П1A20B80C31T21','M16П1A20B80C41T21','M16П1A20B60C31D11T21',
+   'M16П1A20B60C31D21T21','M16П1A20B60C31D31T21','M16П1A20B60C31D41T21'
+  );}
+
+  //массив для проверки БВК предв режим  (мс)
+  testBVK_Arr_pr:array[1..BVK_NUM_TEST_CH] of TBVKCHTestElem=
+  (
+   (setTime:(0,0,0);durabilityT:(0,0,0)),
+   (setTime:(0,0,0);durabilityT:(0,0,0)),
+   (setTime:(0,0,0);durabilityT:(0,0,0)),
+   (setTime:(0,0,0);durabilityT:(0,0,0)),
+   (setTime:(0,0,0);durabilityT:(0,0,0)),
+   (setTime:(0,0,0);durabilityT:(0,0,0)),
+   (setTime:(0,0,0);durabilityT:(0,0,0)),
+   (setTime:(0,0,0);durabilityT:(0,0,0)),
+   (setTime:(500,0,0);durabilityT:(0,0,0)),
+   (setTime:(1000,0,0);durabilityT:(0,0,0)),
+   (setTime:(0,0,0);durabilityT:(0,0,0)),
+   (setTime:(0,0,0);durabilityT:(0,0,0))
+  );
+  //хранение текущего состояния  предв. режима
+  testBVK_Arr_pr_curr:array[1..BVK_NUM_TEST_CH] of Integer;
+  //хранение предидущего состояния предв. режима
+  testBVK_Arr_pr_prev:array[1..BVK_NUM_TEST_CH] of Integer;
+  //хранение нумерации проверенных состояний канала
+  testedState_pr:array[1..BVK_NUM_TEST_CH] of Integer;
+  //хранение начального состояния
+  testBVK_Arr_pr_BegState:array[1..BVK_NUM_TEST_CH] of Integer;
+
+  //массив для проерки БВК осн. режим  (мс)
+  testBVK_Arr_G:array[1..BVK_NUM_TEST_CH] of TBVKCHTestElem=
+  (
+   (setTime:(202000,209000,325000);durabilityT:(1000,1000,1000)),
+   (setTime:(326000,0,0);durabilityT:(1000,0,0)),
+   (setTime:(203000,0,0);durabilityT:(500,0,0)),
+   (setTime:(210000,0,0);durabilityT:(1000,0,0)),
+   (setTime:(0,0,0);durabilityT:(0,0,0)),
+   (setTime:(210000,0,0);durabilityT:(1000,0,0)),
+   (setTime:(326000,0,0);durabilityT:(1000,0,0)),
+   (setTime:(204000,211000,327000);durabilityT:(500,1000,1000)),
+   (setTime:(500,0,0);durabilityT:(0,0,0)),
+   (setTime:(1000,0,0);durabilityT:(0,0,0)),
+   (setTime:(25000,0,0);durabilityT:(0,0,0)),
+   (setTime:(0,0,0);durabilityT:(0,0,0))
+  );
+
+  //хранение текущего состояния  осн. режима
+  testBVK_Arr_G_curr:array[1..BVK_NUM_TEST_CH] of Integer;
+  //хранение предидущего состояния осн. программы
+  testBVK_Arr_G_prev:array[1..BVK_NUM_TEST_CH] of Integer;
+  //хранение нумерации проверенных состояний канала
+  testedState_G:array[1..BVK_NUM_TEST_CH] of Integer;
+  //хранение начального состояния
+  testBVK_Arr_G_BegState:array[1..BVK_NUM_TEST_CH] of Integer;
+
+
+
+  //testBVK_Arr_pr_Beg:array[1..BVK_NUM_TEST_CH] of Integer;
+
+
+
+
+
+  //testBVK_Arr_G_Beg:array[1..BVK_NUM_TEST_CH] of Integer;
+  // временный тестовый массив для осн. программы для хранения предидущего состояния каналов
+  //testBVK_Arr_G_Beg_prev:array[1..BVK_NUM_TEST_CH] of Integer;
+  //reversFlagArr:array[1..BVK_NUM_TEST_CH] of Boolean;
+
+  //timeDownSetChArr:array[1..BVK_NUM_TEST_CH] of cardinal=(0,0,0,0,0,0,0,0,0,0,0,0,0,0);
+  //флаг установки начального состояния
+  prBegFl:Boolean=True;
+
+
+  //массив срабатываний канала
+  //tTimeBVK_pr_setT:array[1..BVK_NUM_TEST_CH] of Cardinal=(0,0,0,0,0,0,0,0,0,0,500,1000,0,0);
+  //массив длительности урония после срабатывания канала
+  //tTimeBVK_pr_durabilityT:array[1..BVK_NUM_TEST_CH] of Cardinal=(0,0,0,0,0,0,0,0,0,0,0,0,0,0);
+
+  //массив для проверки БВК основной режим
+  //массив срабатываний канала
+  //tTimeBVK_G_setT:array[1..BVK_NUM_TEST_CH] of Cardinal=(0,0,0,0,0,0,0,0,0,0,500,1000,0,0);
+  //массив длительности урония после срабатывания канала
+  //tTimeBVK_G_durabilityT:array[1..BVK_NUM_TEST_CH] of Cardinal;
+
+
 
   minScale1:integer=-1;
   maxScale1:Integer=-1;
@@ -158,9 +270,34 @@ var
   (1,2,3,4,5,6,7,8,9,11,13,15,17,19,21,23,25,27,29,31);
 
   dataMKB:array[1..20]of Integer;
+
   flagMKBEnd:Boolean=false;
 
-  timeSMKB:Int64=0;
+  //флаг успешности наличия приборов
+  flagTestDev:Boolean=true;
+
+  //timeSMKB:Int64=0;
+  hourBVK:Word=0;
+  minBVK:Word=0;
+  secBVK:Word=0;
+  mSecBVK:Word=0;
+  timeBVKCarSec:Cardinal=0;
+  timeBVKCarMSec:Cardinal=0;
+  timeBVKPrevSec:Cardinal=0;
+  timeBVKPrevMSec:Cardinal=0;
+  //флаг проверки предватиленой программы BVK
+  prFlag:Boolean;
+  //флаг проверки основной программы BVK
+  genFlag:Boolean;
+  //массив значений каналов МКБ2 для проверки БВК
+  dataB:array[1..20]of Integer;
+  dataA:array[1..20]of Integer;
+  //корректность  проверки БВК
+  BVKTestFlag:Boolean=true;
+
+  flagFtime:Boolean=false;
+  startBVktime:Integer;
+
 
   procedure testNeedsAdrF;
   //function Test_1_1_10_2():Boolean;
@@ -183,9 +320,10 @@ var
   function testColibr:Boolean;
   function testCompens():boolean;
   procedure TestMKB2;
-  procedure testVP();
+  procedure testVpMKB2();
   function getVoltmetrValue(m_instr_usbtmc:Cardinal):double;
   procedure setFrequencyOnGenerator(freq:real;ampl:real;m_instr_usbtmc:cardinal);
+  procedure TestBVK;
 implementation
   uses OrbitaAll;
 
@@ -231,7 +369,6 @@ end;
 //проверка наличия приборов
 function testOnAllTestDevices:Boolean;
 var
-  flagTestDev:Boolean;
   str:string;
 begin
   flagTestDev:=True;
@@ -245,7 +382,7 @@ begin
   else
   begin
     form1.Memo1.Lines.Add('Магазин сопротивлений Transmille подключен!');
-  end;}
+  end; }
 
   //проверка подключения вольтметра_1
   if (TestConnect(AkipV7_78_1,m_defaultRM_usbtmc_1[0],m_instr_usbtmc_1[0],viAttr_1,Timeout)=-1) then
@@ -273,23 +410,23 @@ begin
   begin
       form1.Memo1.Lines.Add('Вольтметр_2 подключен!');
   end;}
-
+  {SetVoltageOnPowerSupply(1,'0000');
+  SetOnPowerSupply(1);
+  Delay_S(5);
+  SetOnPowerSupply(0);
+  //замыкаем контакты команды НОВ
+  //SendCommandToISD('http://'+ISDip_2+'/type=2num='+inttostr(5)+'val=1'); }
 
   //проверка подключения источника питания
-  {if (PowerTestConnect) then
+  if (PowerTestConnect) then
   begin
     form1.Memo1.Lines.Add('Источник питания АКИП-1105 подключен!');
-    SetOnPowerSupply(1);
-    SetVoltageOnPowerSupply(1,'0000');
-    Delay_S(5);
-    //выставим 27 В
-    SetVoltageOnPowerSupply(1,'2700');
   end
   else
   begin
     form1.Memo1.Lines.Add('Источник питания АКИП-1105 не подключен!');
     flagTestDev:=False;
-  end;}
+  end;
 
   // Проверка ИСД_1--------------------------------------------------------------------------------------------------
   try
@@ -318,7 +455,7 @@ begin
   Form1.idpsrvr1.Active:=False;
 
   //проверка подключения генератора
- { if (TestConnect(RigolDg1022_1,m_defaultRM_usbtmc_2[1],m_instr_usbtmc_2[1],viAttr,Timeout)=-1) then
+  {if (TestConnect(RigolDg1022_1,m_defaultRM_usbtmc_2[1],m_instr_usbtmc_2[1],viAttr,Timeout)=-1) then
   begin
     form1.Memo1.Lines.Add('Генератор не подключен!');
     flagTestDev:=False;
@@ -326,10 +463,10 @@ begin
   else
   begin
     form1.Memo1.Lines.Add('Генератор подключен!');
-  end;  }
+  end;}
 
   //замкнули канал для подготовки подачи команды НОВ
-  SendCommandToISD('http://'+ISDip_2+'/type=2num='+inttostr(5)+'val=1');
+  //SendCommandToISD('http://'+ISDip_2+'/type=2num='+inttostr(5)+'val=1');
 
 
   Result:=flagTestDev;
@@ -715,7 +852,7 @@ begin
     end;
     1:
     begin
-      //загрузим в мемо тестовые адреса для проверки МКБ
+      //загрузим в мемо тестовые адреса для проверки МКБ2
       for i:=1 to Length(testStringsMKB2) do //20
       begin
         form1.OrbitaAddresMemo.Lines.Add(testStringsMKB2[i]);
@@ -724,7 +861,7 @@ begin
     end;
     2:
     begin
-      //загрузим в мемо тестовые адреса для проверки  МКТ
+      //загрузим в мемо тестовые адреса для проверки  МКТ3
       for i:=1 to Length(testStringsMKT3) do //32
       begin
         form1.OrbitaAddresMemo.Lines.Add(testStringsMKT3[i]);
@@ -1259,7 +1396,7 @@ begin
 end;
 
 
-procedure testVP();
+procedure testVpMKB2();
 var
   voltmetrValue:double;
 begin
@@ -1382,7 +1519,35 @@ begin
   Result:=VoltmetrValue;
 end;
 
+//===========================================================
+//Проверка прибора БВК
+//===========================================================
+procedure TestBVK;
+var
+  i:integer;
+begin
+  //получаем время запуска
+  DecodeTime(GetTime,hourBVK,minBVK,secBVK,mSecBVK);
+  //время в секундах
+  timeBVKPrevSec:=hourBVK*60*60+minBVK*60+secBVK;
+  //время в мс
+  timeBVKPrevMSec:=1000*(hourBVK*60*60+minBVK*60+secBVK)+mSecBVK;
+  //установка проверки предварительной программы
+  prFlag:=True;
 
+  for i:=1 to BVK_NUM_TEST_CH do
+  begin
+    testedState_pr[i]:=1;
+    testedState_G[i]:=1;
+  end;
+  startBVktime:=0;
+
+
+  form1.mmoTestResult.lines.add('ПРОВЕРКА ПУНКТА 1.1.5 ТУ ЯГАИ.468363.026 (ПРОВЕРКА ФОРМИРОВАНИЯ ПРИБОРОМ БВК реллейных и потенциальных команд)');
+  form1.mmoTestResult.lines.add('ПРОВЕРКА ПРЕДВАРИТЕЛЬНОГО РЕЖИМА РАБОТЫ БВК');
+  form1.tmrTestBVK.Enabled:=True;
+end;
+//===========================================================
 
 //===========================================================
 //Проверка прибора МКБ2
@@ -1401,7 +1566,7 @@ var
 
   freqNum:Integer;
 begin
-  {rezFlag:=True;
+  rezFlag:=True;
   setConf(m_instr_usbtmc_1[0],'CONF:VOLT:AC 10');
   generatorOutOn(m_instr_usbtmc_2[1]);
   form1.mmoTestResult.lines.add('ПРОВЕРКА ПУНКТА 1.2.1 ТУ ЯГАИ.468363.026 (ПРОВЕРКА МЕТРОЛОГИЧЕСКИХ ХАРАКТЕРИСТИК ВИБРАЦИОННЫХ УСИЛИТЕЛЕЙ)');
@@ -2186,9 +2351,9 @@ begin
         GOTO M4;
       end;
     end;}
-  {end;
-  //проверка постоянных напряжений на каналах
-  testVP;} 
+  end;
+  //проверка постоянных напряжений на каналах  МКБ2
+  testVpMKB2;
 
 
   //начали прием данных с прибора
@@ -2200,7 +2365,8 @@ begin
   NumberChannel:=1;
   rezFlag:=true;                                                                                                   //Результат проверки одного пункта ТУ
   form1.mmoTestResult.Lines.Add('');
-  form1.mmoTestResult.Lines.Add('ПРОВЕРКА ПУНКТОВ 1.2.2 И 1.1.1 ТУ ЯГАИ.468363.026 (ПРОВЕРКА МЕТРОЛОГИЧЕСКИХ ХАРАКТЕРИСТИК КОМУТАТОРА И ПРОВЕРКА ВХОДНЫХ СИГНАЛОВ))');
+  form1.mmoTestResult.Lines.Add('ПРОВЕРКА ПУНКТОВ 1.2.2 И 1.1.1 ТУ ЯГАИ.468363.026'+
+    '(ПРОВЕРКА МЕТРОЛОГИЧЕСКИХ ХАРАКТЕРИСТИК КОМУТАТОРА И ПРОВЕРКА ВХОДНЫХ СИГНАЛОВ))');
   form1.mmoTestResult.Lines.Add('');
   form1.mmoTestResult.Lines.Add('Проверка рабочей шкалы при напряжении 0В');
 

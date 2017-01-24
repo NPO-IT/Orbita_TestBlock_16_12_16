@@ -1283,7 +1283,7 @@ begin
     begin
       Form1.mmoTestResult.Lines.Add('1');
     end;}
-    dataMKB[numChanel+1]:=fastValT21;
+    dataMKB[numChanel+1]:=fastValT21;  
   except
     //ShowMessage('222');
   end;

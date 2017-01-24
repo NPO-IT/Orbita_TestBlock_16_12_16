@@ -106,9 +106,15 @@ type
     lnsrsSeries11: TLineSeries;
     tmrMKB_Dpart: TTimer;
     tmrF: TTimer;
-    tmrForMKB: TTimer;
+    tmrTestBVK: TTimer;
     btn2: TButton;
     lbl2: TLabel;
+    btn3: TButton;
+    btn4: TButton;
+    tmr1: TTimer;
+    tmrBVK2: TTimer;
+    btnPoweroff: TButton;
+    btnPowerOn: TButton;
     procedure startReadACPClick(Sender: TObject);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure FormCreate(Sender: TObject);
@@ -153,7 +159,13 @@ type
     procedure tmrMKB_DpartTimer(Sender: TObject);
     procedure tmrFTimer(Sender: TObject);
     procedure btn2Click(Sender: TObject);
-    procedure tmrForMKBTimer(Sender: TObject);
+    procedure tmrTestBVKTimer(Sender: TObject);
+    procedure btn3Click(Sender: TObject);
+    procedure btn4Click(Sender: TObject);
+    procedure tmr1Timer(Sender: TObject);
+    procedure tmrBVK2Timer(Sender: TObject);
+    procedure btnPoweroffClick(Sender: TObject);
+    procedure btnPowerOnClick(Sender: TObject);
   private
     { Private declarations }
   public
@@ -3828,41 +3840,65 @@ end;
 
 procedure TForm1.btnAutoTestClick(Sender: TObject);
 begin
-  timeSMKB:=0;
-
+  //timeSMKB:=0;
   //считаем данные из конфигурационного файла проверки
   //если возникли ошибки то дальше не идем
   Form1.propB.Enabled:=false;
 
+
+  //проверяем что загрузились настройки прибора в  конф. файле
   if (iniRead) then
   begin
+    //проверяем наличие приборов
     if testOnAllTestDevices then
     begin
+      //указываем номер пакета адресов для проверки БВК
       adrTestNum:=3;
+      //подгружаем адреса для проверки БВК
       testNeedsAdrF;
+      //активируем страницу проверки быстрых
       form1.PageControl1.ActivePageIndex:=1;
 
-      if (PowerTestConnect) then
+      //запуск питания прибора
+      SetOnPowerSupply(0);
+      SetVoltageOnPowerSupply(1,'2700');
+      SetOnPowerSupply(1);
+
+      if Form1.startReadACP.Caption='Прием' then
       begin
-        form1.Memo1.Lines.Add('Источник питания АКИП-1105 подключен!');
+        //начали прием данных с прибора
+        Form1.startReadACP.Click;  //!!!
+      end;
+
+
+
+      //проверка подключения источника питания
+      if (flagTestDev) then
+      begin
         SetOnPowerSupply(1);
         SetVoltageOnPowerSupply(1,'0000');
-        Delay_S(5);
-        //выставим 27 В
-        SetVoltageOnPowerSupply(1,'2700');
-      end
-      else
-      begin
-        form1.Memo1.Lines.Add('Источник питания АКИП-1105 не подключен!');
-        //flagTestDev:=False;
-      end;
-      //начали прием данных с прибора
-      Form1.startReadACP.Click;  //!!!
-      
+        Delay_ms(20);
+        SetOnPowerSupply(0);
+        //замыкаем контакты команды НОВ
+        SendCommandToISD('http://'+ISDip_2+'/type=2num='+inttostr(5)+'val=1');
 
-      //Выставляем адреса МКB2;
+        SetVoltageOnPowerSupply(1,'2700');
+        SetOnPowerSupply(1);
+      end;
+
+      Form1.tmr1.Enabled:=True; 
+
+
+
+      //flagMKBEnd:=True;// временно проверяем МКТ3 и СРН2 тут
+       //запуск впомогательного таймера для проверки МКТ3
+      //Form1.tmrF.Enabled:=True; //!!! временно проверяем МКТ3 и СРН2 тут
+
+      //указываем номер пакета адресов для проверки МКБ2
       {adrTestNum:=1;
+      //подгружаем адреса для проверки МКБ2
       testNeedsAdrF;
+      //активация вкладки с АЧХ
       form1.PageControl1.ActivePageIndex:=3;
       //проверка МКБ2
       TestMKB2;}
@@ -4044,6 +4080,7 @@ begin
     if (testFlag_1_1_10_2) then
     begin
       testFlag_1_1_10_2:=False;
+      //запуск проверки погрешностей измерений МКТ3
       Form1.tmr1_1_10_2.Enabled:=true;
     end
     else
@@ -4054,6 +4091,7 @@ begin
         if  (testFlagRco) then
         begin
           testFlagRco:=False;
+          //запуск проверки компенсации начальных сопротивлений МКТ3
           Form1.tmrRCo.Enabled:=True;
         end
         else
@@ -4779,8 +4817,9 @@ begin
         Form1.mmoTestResult.Lines.Add('Результат проверки точности измерения : !!!НЕ НОРМА!!!');
       end;
 
-
+      //завершение проверки МКБ2
       form1.tmrMKB_Dpart.Enabled:=False;
+      //запуск впомогательного таймера для проверки МКТ3
       Form1.tmrF.Enabled:=True;
       flagMKBEnd:=True;
     end;
@@ -5189,6 +5228,7 @@ end;
 
 procedure TForm1.tmrFTimer(Sender: TObject);
 begin
+  //проверяем что проверку МКБ2 завершили
   if (flagMKBEnd) then
   begin
     flagMKBEnd:=false;
@@ -5198,12 +5238,16 @@ begin
     //Delay_S(5);
     //startTestMKT3:=True;
 
+    //устанавливаем пакет адресов для проверки МКТ3
     adrTestNum:=2;
-    
     //Form1.startReadACP.Click;
+    //выставялем адреса МКТ3
     testNeedsAdrF; //!!!
     //заполним параметры адресов в массив параметров адресов
     FillAdressParam;  //!!!
+
+    //запускаем прием данных с прибора.
+    Form1.startReadACP.Click; //временно тут
 
     Form1.mmoTestResult.Lines.Add('ПРОВЕРКА ПУНКТА 1.1.10.2 ТУ ЯГАИ.468157.116'+
       '(МЕТРОЛОГИЧЕСКИЕ ХАРАКТЕРИСТИКИ ДЛЯ КАНАЛОВ ТМП(ПРИБОР МКТ3)).');
@@ -5215,21 +5259,436 @@ begin
 
     Form1.tmrF.Enabled:=False;
   end;
-
-
 end;
 
 procedure TForm1.btn2Click(Sender: TObject);
 begin
   //подача команды НОВ на БВК
   SendCommandToISD('http://'+ISDip_2+'/type=2num='+inttostr(5)+'val=0');
-  form1.tmrForMKB.Enabled:=True;
+  DecodeTime(GetTime,hourBVK,minBVK,secBVK,mSecBVK);
+  //время в секундах
+  timeBVKPrevSec:=hourBVK*60*60+minBVK*60+secBVK;
+  //время в мс
+  timeBVKPrevMSec:=1000*(hourBVK*60*60+minBVK*60+secBVK)+mSecBVK;
+  form1.tmrBVK2.Enabled:=True;
 end;
 
-procedure TForm1.tmrForMKBTimer(Sender: TObject);
+procedure TForm1.tmrTestBVKTimer(Sender: TObject);
+const
+  ErrorT=250;//50//250
+var
+  iCh:integer;
+  iT:Integer;
+  setChFlag:Boolean;
+  //timeDownSetCh:cardinal;
+  timeUpSetCh:Cardinal;
+  chTestInt:integer;
+
+  strOut:string;
+//==============================================================================
+// Проверка попадания времени срабатывания в допуск времени срабатывания
+//==============================================================================
+function testMTime(timeTest:integer;time:Integer;dTime:integer):boolean;
 begin
-  Form1.lbl2.Caption:=IntToStr(timeSMKB);
-  Inc(timeSMKB);
+  if  ((time>=timeTest-dTime)and(time<=timeTest+dTime)) then
+  begin
+    result:=true;
+  end
+  else
+  begin
+    result:=false;
+  end;
+end;
+//==============================================================================
+begin
+  //получаем время системы
+  DecodeTime(GetTime,hourBVK,minBVK,secBVK,mSecBVK);
+  //время в сек.
+  timeBVKCarSec:=hourBVK*60*60+minBVK*60+secBVK;
+  //время в мсек
+  timeBVKCarMSec:=1000*(hourBVK*60*60+minBVK*60+secBVK)+mSecBVK;
+  Form1.lbl2.Caption:=IntToStr(timeBVKCarSec-timeBVKPrevSec);
+  setChFlag:=true;
+
+  if (prFlag) then
+  begin
+    //предв.
+    //первое заполнение
+    Delay_ms(5);
+    if (prBegFl) then
+    begin
+      prBegFl:=False;
+      //получаем первое состояние канала
+      for iCh:=1 to BVK_NUM_TEST_CH do
+      begin
+        testBVK_Arr_pr_curr[iCh]:=dataMKB[iCh];
+        testBVK_Arr_pr_BegState[iCh]:=dataMKB[iCh];
+      end;
+    end
+    else
+    begin
+      for iCh:=1 to BVK_NUM_TEST_CH do
+      begin
+        testBVK_Arr_pr_prev[iCh]:=testBVK_Arr_pr_curr[iCh];
+        testBVK_Arr_pr_curr[iCh]:=dataMKB[iCh];
+      end;
+      //получили текущее состояние и предидущее
+
+      {if testMTime(1000,timeBVKCarMSec-timeBVKPrevMSec,50) then
+      begin
+        form1.mmoTestResult.Lines.Add('1');
+      end; }
+
+
+      //проверяем изменилось ли состояние каналов
+      for iCh:=1 to BVK_NUM_TEST_CH do
+      begin
+        if Abs(testBVK_Arr_pr_prev[iCh]-testBVK_Arr_pr_curr[iCh])>=10 then
+        begin
+          // проверим в свое ли время оно изменилось
+          for iT:=testedState_pr[iCh] to BVK_NUM_SETS+1 do
+          begin
+            //проверяем установлено такое время переключения
+            //или переключения обратно
+
+            strOut:='';
+            if (iCh>=9) then
+            begin
+              strOut:='Канал К'+intTostr(iCh+2)+':';
+            end
+            else
+            begin
+              strOut:='Канал К'+intTostr(iCh)+':';
+            end;
+
+            if testMTime(testBVK_Arr_pr[iCh].setTime[iT],timeBVKCarMSec-timeBVKPrevMSec,ErrorT) then
+            begin
+              //в свое
+              //form1.mmoTestResult.Lines.Add('Время Пр (мсек):'+intTostr(timeBVKCarMSec-timeBVKPrevMSec));
+              if abs(testBVK_Arr_pr_prev[iCh]-testBVK_Arr_pr_curr[iCh])>=10 then
+              begin
+                form1.mmoTestResult.Lines.Add('Время переключения(мсек):'+intTostr(timeBVKCarMSec-timeBVKPrevMSec)+' '+strOut+' НОРМА'+' ВКЛ');
+              end
+              else
+              begin
+                form1.mmoTestResult.Lines.Add('Время переключения(мсек):'+intTostr(timeBVKCarMSec-timeBVKPrevMSec)+' '+strOut+'!!НЕ НОРМА!!'+' ВКЛ');
+                BVKTestFlag:=False;
+              end;
+              //если это состояние проверили то переключаемся на следующее
+              Inc(testedState_pr[iCh]);
+              Break;
+            end
+            else if testMTime(testBVK_Arr_pr[iCh].setTime[iT-1]+testBVK_Arr_pr[iCh].durabilityT[iT-1],timeBVKCarMSec-timeBVKPrevMSec,ErrorT) then
+            begin
+              //в свое
+              //form1.mmoTestResult.Lines.Add('Время Пр (мсек):'+intTostr(timeBVKCarMSec-timeBVKPrevMSec));
+              if abs(testBVK_Arr_pr_prev[iCh]-testBVK_Arr_pr_curr[iCh])>=10 then
+              begin
+                form1.mmoTestResult.Lines.Add('Время переключения(мсек):'+intTostr(timeBVKCarMSec-timeBVKPrevMSec)+' '+strOut+' НОРМА'+' ВЫКЛ');
+              end
+              else
+              begin
+                form1.mmoTestResult.Lines.Add('Время переключения(мсек):'+intTostr(timeBVKCarMSec-timeBVKPrevMSec)+' '+strOut+'!!НЕ НОРМА!!'+' ВЫКЛ');
+                BVKTestFlag:=False;
+              end;
+              Break;
+            end
+            else
+            begin
+               //не в свое
+              //form1.mmoTestResult.Lines.Add('Время Пр (мсек):'+intTostr(timeBVKCarMSec-timeBVKPrevMSec));
+              form1.mmoTestResult.Lines.Add('Ложное время переключения(мсек):'+intTostr(timeBVKCarMSec-timeBVKPrevMSec)+' '+strOut);
+              //form1.mmoTestResult.Lines.Add('Отладка:'+intTostr(testBVK_Arr_pr[iCh].setTime[iT])+' '+intTostr(testBVK_Arr_pr[iCh].durabilityT[iT]));
+              BVKTestFlag:=False;
+            end;
+          end;
+        end;
+      end;
+    end;
+
+    //время завершения предварительного режима  20 сек
+    if testMTime(20000,timeBVKCarMSec-timeBVKPrevMSec,ErrorT) then
+    begin
+      //проверяем константные каналы на соответствие
+      for iCh:=1 to BVK_NUM_TEST_CH do
+      begin
+        chTestInt:=0;
+        strOut:='';
+        if (iCh>=9) then
+        begin
+          strOut:='Канал К'+intTostr(iCh+2)+':';
+        end
+        else
+        begin
+          strOut:='Канал К'+intTostr(iCh)+':';
+        end;
+
+        for iT:=1 to BVK_NUM_SETS do
+        begin
+          chTestInt:=chTestInt+testBVK_Arr_pr[iCh].setTime[iT];
+        end;
+        if chTestInt=0 then
+        begin
+          //константа
+          if abs(testBVK_Arr_pr_BegState[iCh]-testBVK_Arr_pr_curr[iCh])<=3 then
+          begin
+            form1.mmoTestResult.Lines.Add(strOut+' НОРМА'+' ВКЛ');
+          end
+          else
+          begin
+            form1.mmoTestResult.Lines.Add(strOut+'!!НЕ НОРМА!!'+' ВКЛ');
+            BVKTestFlag:=False;
+          end;
+        end;
+      end;    
+
+      //закончили предварительную проверку
+      prFlag:=False;
+      //флаг для осущ. нач запоминания в след. режиме
+      prBegFl:=True;
+      //получаем время запуска
+      DecodeTime(GetTime,hourBVK,minBVK,secBVK,mSecBVK);
+      //время в секундах
+      timeBVKPrevSec:=hourBVK*60*60+minBVK*60+secBVK;
+      //время в мс
+      timeBVKPrevMSec:=1000*(hourBVK*60*60+minBVK*60+secBVK)+mSecBVK;
+      form1.mmoTestResult.lines.add('ПРОВЕРКА ОСНОВНОГО РЕЖИМА РАБОТЫ БВК');
+      //подача команды НОВ для установки основной проверки на БВК
+      SendCommandToISD('http://'+ISDip_2+'/type=2num='+inttostr(5)+'val=0');
+    end;
+  end
+  else
+  begin
+    //основная
+    //form1.mmoTestResult.Lines.Add('Время О (мсек):'+intTostr(timeBVKCarMSec-timeBVKPrevMSec));
+    Delay_ms(5);
+
+    //первое заполнение
+    if (prBegFl) then
+    begin
+      prBegFl:=False;
+      //получаем первое состояние канала
+      for iCh:=1 to BVK_NUM_TEST_CH do
+      begin
+        testBVK_Arr_G_curr[iCh]:=dataMKB[iCh];
+        testBVK_Arr_G_BegState[iCh]:=dataMKB[iCh];
+      end;
+    end
+    else
+    begin
+      for iCh:=1 to BVK_NUM_TEST_CH do
+      begin
+        testBVK_Arr_G_prev[iCh]:=testBVK_Arr_G_curr[iCh];
+        testBVK_Arr_G_curr[iCh]:=dataMKB[iCh];
+      end;
+      //получили текущее состояние и предидущее
+
+      //проверяем изменилось ли состояние каналов
+      for iCh:=1 to BVK_NUM_TEST_CH do
+      begin
+        if Abs(testBVK_Arr_G_prev[iCh]-testBVK_Arr_G_curr[iCh])>=10 then
+        begin
+          // проверим в свое ли время оно изменилось
+          for iT:=testedState_G[iCh] to BVK_NUM_SETS+1 do    // iT:=  1
+          begin
+            //проверяем установлено такое время переключения
+            //или переключения обратно
+            strOut:='';
+            if (iCh>=9) then
+            begin
+              strOut:='Канал К'+intTostr(iCh+2)+':';
+            end
+            else
+            begin
+              strOut:='Канал К'+intTostr(iCh)+':';
+            end;
+
+            if testMTime(testBVK_Arr_G[iCh].setTime[iT],timeBVKCarMSec-timeBVKPrevMSec,ErrorT) then
+            begin
+              //в свое
+              //form1.mmoTestResult.Lines.Add('Время О (мсек):'+intTostr(timeBVKCarMSec-timeBVKPrevMSec));
+              //form1.mmoTestResult.Lines.Add('Отладка:'+intTostr(testBVK_Arr_G[iCh].setTime[iT])+' '+intTostr(testBVK_Arr_G[iCh].durabilityT[iT])+' вх');
+              if abs(testBVK_Arr_G_prev[iCh]-testBVK_Arr_G_curr[iCh])>=10 then
+              begin
+                form1.mmoTestResult.Lines.Add('Время переключения(мсек):'+intTostr(timeBVKCarMSec-timeBVKPrevMSec)+' '+strOut+' НОРМА'+' ВКЛ');
+              end
+              else
+              begin
+                form1.mmoTestResult.Lines.Add('Время переключения(мсек):'+intTostr(timeBVKCarMSec-timeBVKPrevMSec)+' '+strOut+'!!НЕ НОРМА!!'+' ВКЛ');
+                BVKTestFlag:=False;
+              end;
+              Inc(testedState_G[iCh]);
+              Break;
+            end
+            else if testMTime(testBVK_Arr_G[iCh].setTime[iT-1]+testBVK_Arr_G[iCh].durabilityT[iT-1],timeBVKCarMSec-timeBVKPrevMSec,ErrorT) then
+            begin
+              //в свое
+              //form1.mmoTestResult.Lines.Add('Время О (мсек):'+intTostr(timeBVKCarMSec-timeBVKPrevMSec));
+              //form1.mmoTestResult.Lines.Add('Отладка:'+intTostr(testBVK_Arr_G[iCh].setTime[iT-1])+' '+intTostr(testBVK_Arr_G[iCh].durabilityT[iT-1])+' вых');
+              if abs(testBVK_Arr_G_prev[iCh]-testBVK_Arr_G_curr[iCh])>=10 then
+              begin
+                form1.mmoTestResult.Lines.Add('Время переключения(мсек):'+intTostr(timeBVKCarMSec-timeBVKPrevMSec)+' '+strOut+' НОРМА'+' ВЫКЛ');
+              end
+              else
+              begin
+                form1.mmoTestResult.Lines.Add('Время переключения(мсек):'+intTostr(timeBVKCarMSec-timeBVKPrevMSec)+' '+strOut+'!!НЕ НОРМА!!'+' ВЫКЛ');
+                BVKTestFlag:=False;
+              end;
+              Break;
+            end
+            else
+            begin
+              //form1.mmoTestResult.Lines.Add('Время О (мсек):'+intTostr(timeBVKCarMSec-timeBVKPrevMSec));
+              //не в свое
+              form1.mmoTestResult.Lines.Add('Ложное время переключения(мсек):'+intTostr(timeBVKCarMSec-timeBVKPrevMSec)+' '+strOut);
+              //form1.mmoTestResult.Lines.Add('Отладка:'+intTostr(testBVK_Arr_G[iCh].setTime[iT])+' '+intTostr(testBVK_Arr_G[iCh].durabilityT[iT]));
+              BVKTestFlag:=False;
+            end;
+          end;
+        end;
+      end;
+    end;
+    //время завершения основного режима 330000 сек
+    if testMTime(330000,timeBVKCarMSec-timeBVKPrevMSec,ErrorT) then
+    begin
+      //проверяем константные каналы на соответствие
+      for iCh:=1 to BVK_NUM_TEST_CH do
+      begin
+        chTestInt:=0;
+        strOut:='';
+        if (iCh>=9) then
+        begin
+          strOut:='Канал К'+intTostr(iCh+2)+':';
+        end
+        else
+        begin
+          strOut:='Канал К'+intTostr(iCh)+':';
+        end;
+
+        for iT:=1 to BVK_NUM_SETS do
+        begin
+          chTestInt:=chTestInt+testBVK_Arr_G[iCh].setTime[iT];
+        end;
+        if chTestInt=0 then
+        begin
+          //константа
+          if abs(testBVK_Arr_G_BegState[iCh]-testBVK_Arr_G_curr[iCh])<=3 then
+          begin
+            form1.mmoTestResult.Lines.Add(strOut+' НОРМА'+' ВКЛ');
+          end
+          else
+          begin
+            form1.mmoTestResult.Lines.Add(strOut+'!!НЕ НОРМА!!'+' ВКЛ');
+            BVKTestFlag:=False;
+          end;
+        end;
+      end;     
+
+      //установка флага основной проверки
+      genFlag:=False;
+      //закончили проверку
+      if (BVKTestFlag) then
+      begin
+        form1.mmoTestResult.Lines.Add('ПРОВЕРКА БВК: '+'НОРМА');
+      end
+      else
+      begin
+        form1.mmoTestResult.Lines.Add('ПРОВЕРКА БВК: '+'!!НЕ НОРМА!!');
+      end;  
+      form1.tmrTestBVK.Enabled:=false;
+    end;
+  end;
+end;
+
+procedure TForm1.btn3Click(Sender: TObject);
+begin
+  //подача команды НОВ на БВК для теста!!!
+  SendCommandToISD('http://'+ISDip_2+'/type=2num='+inttostr(5)+'val=0');
+end;
+
+procedure TForm1.btn4Click(Sender: TObject);
+begin
+  {SetVoltageOnPowerSupply(1,'0000');
+  SetOnPowerSupply(1);
+  Delay_S(5);
+  SetOnPowerSupply(0);
+  //замыкаем контакты команды НОВ
+  SendCommandToISD('http://'+ISDip_2+'/type=2num='+inttostr(5)+'val=1');
+
+  //проверка подключения источника питания
+  if (PowerTestConnect) then
+  begin
+    form1.Memo1.Lines.Add('Источник питания АКИП-1105 подключен!');
+    SetVoltageOnPowerSupply(1,'2700');
+    SetOnPowerSupply(1);
+ //   SetVoltageOnPowerSupply(1,'0000');
+    //Delay_S(5);
+    //выставим 27 В
+
+  end
+  else
+  begin
+    form1.Memo1.Lines.Add('Источник питания АКИП-1105 не подключен!');
+  end;}
+  if (flagTestDev) then
+  begin
+    {SetOnPowerSupply(0);
+    SetVoltageOnPowerSupply(1,'0000');
+    SetOnPowerSupply(1);
+    Delay_ms(10);
+    SetOnPowerSupply(0); }
+    //замыкаем контакты команды НОВ
+    SendCommandToISD('http://'+ISDip_2+'/type=2num='+inttostr(5)+'val=1');
+
+    SetVoltageOnPowerSupply(1,'2700');
+    SetOnPowerSupply(1);
+  end;
+
+  DecodeTime(GetTime,hourBVK,minBVK,secBVK,mSecBVK);
+  //время в секундах
+  timeBVKPrevSec:=hourBVK*60*60+minBVK*60+secBVK;
+  //время в мс
+  timeBVKPrevMSec:=1000*(hourBVK*60*60+minBVK*60+secBVK)+mSecBVK;
+  form1.tmrBVK2.Enabled:=True;
+
+end;
+
+procedure TForm1.tmr1Timer(Sender: TObject);
+begin
+  if startBVktime=4 then   //3
+  begin
+    Form1.tmr1.Enabled:=false;
+    //запуск проверки БВК.
+    testBVK;
+  end;
+  Inc(startBVktime);
+end;
+
+procedure TForm1.tmrBVK2Timer(Sender: TObject);
+begin
+  //получаем время системы
+  DecodeTime(GetTime,hourBVK,minBVK,secBVK,mSecBVK);
+  //время в сек.
+  timeBVKCarSec:=hourBVK*60*60+minBVK*60+secBVK;
+  //время в мсек
+  timeBVKCarMSec:=1000*(hourBVK*60*60+minBVK*60+secBVK)+mSecBVK;
+  Form1.lbl2.Caption:=IntToStr(timeBVKCarSec-timeBVKPrevSec);
+end;
+
+procedure TForm1.btnPoweroffClick(Sender: TObject);
+begin
+  SetOnPowerSupply(0);
+  SetVoltageOnPowerSupply(1,'0000');
+  SetOnPowerSupply(1);
+  Delay_ms(10);
+  SetOnPowerSupply(0);
+end;
+
+procedure TForm1.btnPowerOnClick(Sender: TObject);
+begin
+    SendCommandToISD('http://'+ISDip_2+'/type=2num='+inttostr(5)+'val=1');
+    SetVoltageOnPowerSupply(1,'2700');
+    SetOnPowerSupply(1);
 end;
 
 end.

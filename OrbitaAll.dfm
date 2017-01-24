@@ -1,10 +1,10 @@
 object Form1: TForm1
-  Left = 191
-  Top = 137
+  Left = 190
+  Top = 127
   BorderIcons = [biSystemMenu, biMinimize]
   BorderStyle = bsSingle
   Caption = #1057#1087#1077#1094#1080#1072#1083#1100#1085#1086#1077' '#1087#1088#1086#1075#1088#1072#1084#1084#1085#1086#1077' '#1086#1073#1077#1089#1087#1077#1095#1077#1085#1080#1077' '#1086#1073#1088#1072#1073#1086#1090#1082#1080' '#1080' '#1088#1077#1075#1080#1089#1090#1088#1072#1094#1080#1080
-  ClientHeight = 787
+  ClientHeight = 834
   ClientWidth = 1840
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -1308,7 +1308,7 @@ object Form1: TForm1
     Font.Name = 'MS Sans Serif'
     Font.Style = [fsBold]
     ParentFont = False
-    TabOrder = 10
+    TabOrder = 11
     TabStop = True
   end
   object rb2: TRadioButton
@@ -1323,7 +1323,7 @@ object Form1: TForm1
     Font.Name = 'MS Sans Serif'
     Font.Style = [fsBold]
     ParentFont = False
-    TabOrder = 11
+    TabOrder = 12
   end
   object btnAutoTest: TButton
     Left = 1136
@@ -1346,7 +1346,7 @@ object Form1: TForm1
     Width = 449
     Height = 625
     ScrollBars = ssBoth
-    TabOrder = 12
+    TabOrder = 13
   end
   object btn1: TButton
     Left = 1048
@@ -1354,21 +1354,57 @@ object Form1: TForm1
     Width = 75
     Height = 25
     Caption = 'btn1'
-    TabOrder = 13
+    TabOrder = 14
     OnClick = btn1Click
   end
   object btn2: TButton
-    Left = 1472
-    Top = 56
+    Left = 1480
+    Top = 80
     Width = 75
     Height = 25
     Caption = 'btn2'
-    TabOrder = 7
+    TabOrder = 10
     OnClick = btn2Click
+  end
+  object btn3: TButton
+    Left = 1496
+    Top = 784
+    Width = 75
+    Height = 25
+    Caption = 'btn3'
+    TabOrder = 17
+    OnClick = btn3Click
+  end
+  object btn4: TButton
+    Left = 1480
+    Top = 48
+    Width = 75
+    Height = 25
+    Caption = 'btn4'
+    TabOrder = 7
+    OnClick = btn4Click
+  end
+  object btnPoweroff: TButton
+    Left = 1224
+    Top = 784
+    Width = 75
+    Height = 25
+    Caption = 'btnPoweroff'
+    TabOrder = 15
+    OnClick = btnPoweroffClick
+  end
+  object btnPowerOn: TButton
+    Left = 1304
+    Top = 784
+    Width = 75
+    Height = 25
+    Caption = 'btnPowerOn'
+    TabOrder = 16
+    OnClick = btnPowerOnClick
   end
   object TimerOutToDia: TTimer
     Enabled = False
-    Interval = 55
+    Interval = 20
     OnTimer = TimerOutToDiaTimer
     Left = 704
     Top = 136
@@ -1498,10 +1534,24 @@ object Form1: TForm1
     Left = 1416
     Top = 8
   end
-  object tmrForMKB: TTimer
+  object tmrTestBVK: TTimer
     Enabled = False
-    OnTimer = tmrForMKBTimer
+    Interval = 100
+    OnTimer = tmrTestBVKTimer
     Left = 1488
     Top = 8
+  end
+  object tmr1: TTimer
+    Enabled = False
+    Interval = 200
+    OnTimer = tmr1Timer
+    Left = 1520
+    Top = 8
+  end
+  object tmrBVK2: TTimer
+    Enabled = False
+    OnTimer = tmrBVK2Timer
+    Left = 1624
+    Top = 16
   end
 end
