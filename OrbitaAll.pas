@@ -111,7 +111,7 @@ type
     lbl2: TLabel;
     btn3: TButton;
     btn4: TButton;
-    tmr1: TTimer;
+    tmrStartTestBVK: TTimer;
     tmrBVK2: TTimer;
     btnPoweroff: TButton;
     btnPowerOn: TButton;
@@ -162,7 +162,7 @@ type
     procedure tmrTestBVKTimer(Sender: TObject);
     procedure btn3Click(Sender: TObject);
     procedure btn4Click(Sender: TObject);
-    procedure tmr1Timer(Sender: TObject);
+    procedure tmrStartTestBVKTimer(Sender: TObject);
     procedure tmrBVK2Timer(Sender: TObject);
     procedure btnPoweroffClick(Sender: TObject);
     procedure btnPowerOnClick(Sender: TObject);
@@ -2414,7 +2414,7 @@ begin
   acumBus := 0;
 
   //проверим по флагам откуда надо загружать адреса каналов
-  TestNeedsAdrF;
+  testNeedsAdrF;
 
   //Получение правильного списка адресов
   GetAddrList;
@@ -3859,6 +3859,14 @@ begin
       //активируем страницу проверки быстрых
       form1.PageControl1.ActivePageIndex:=1;
 
+      {adrTestNum:=4;
+      //подгружаем адреса для проверки СЗУ
+
+       testNeedsAdrF;
+      //активируем страницу проверки быстрых
+      form1.PageControl1.ActivePageIndex:=1;}
+
+
       //запуск питания прибора
       SetOnPowerSupply(0);
       SetVoltageOnPowerSupply(1,'2700');
@@ -3869,8 +3877,6 @@ begin
         //начали прием данных с прибора
         Form1.startReadACP.Click;  //!!!
       end;
-
-
 
       //проверка подключения источника питания
       if (flagTestDev) then
@@ -3886,7 +3892,12 @@ begin
         SetOnPowerSupply(1);
       end;
 
-      Form1.tmr1.Enabled:=True; 
+      //Delay_S(5);
+
+
+
+      //запуск проверки БВК
+      Form1.tmrStartTestBVK.Enabled:=True;
 
 
 
@@ -5653,13 +5664,15 @@ begin
 
 end;
 
-procedure TForm1.tmr1Timer(Sender: TObject);
+procedure TForm1.tmrStartTestBVKTimer(Sender: TObject);
 begin
   if startBVktime=4 then   //3
   begin
-    Form1.tmr1.Enabled:=false;
+    //SendCommandToISD('http://'+ISDip_2+'/type=2num='+inttostr(5)+'val=0');
+
+    Form1.tmrStartTestBVK.Enabled:=false;
     //запуск проверки БВК.
-    testBVK;
+    testBVK; 
   end;
   Inc(startBVktime);
 end;

@@ -168,7 +168,7 @@ object Form1: TForm1
     Top = 0
     Width = 903
     Height = 593
-    ActivePage = TabSheet2
+    ActivePage = TabSheet1
     TabOrder = 0
     object TabSheet1: TTabSheet
       Caption = #1052#1077#1076#1083'.'
@@ -1538,14 +1538,14 @@ object Form1: TForm1
     Enabled = False
     Interval = 100
     OnTimer = tmrTestBVKTimer
-    Left = 1488
+    Left = 1528
     Top = 8
   end
-  object tmr1: TTimer
+  object tmrStartTestBVK: TTimer
     Enabled = False
     Interval = 200
-    OnTimer = tmr1Timer
-    Left = 1520
+    OnTimer = tmrStartTestBVKTimer
+    Left = 1560
     Top = 8
   end
   object tmrBVK2: TTimer
