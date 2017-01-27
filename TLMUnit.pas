@@ -85,6 +85,9 @@ type
     arr4: array[0..16415] of byte;
     arr5: array[0..8223] of byte;
 
+    lastTimeBlock:Cardinal;
+    testD:Cardinal;
+
     //запись побайтно заголовка файла. формир. буфера
     procedure WriteToFile(str: string); overload;
     //запись нулевых значений в заголовок файла ТЛМ
@@ -170,6 +173,12 @@ begin
   tlmPlaySpeed := 4;
   //при иниц. записи в файл тлм нет
   flagWriteTLM := false;
+
+  msTime:=0;
+  msTimeF:=0.0;
+
+  //!!
+  lastTimeBlock:=0;
 end;
 //==============================================================================
 
@@ -626,8 +635,22 @@ begin
   //word in block (4b)
   WriteByteToByte(wordNumInBlock);
   //time in mc (4b)
-  timeBlock := (DateTimeToUnix(Time) * 1000) - msStartFile;
+  //timeBlock := (DateTimeToUnix(Time) * 1000) - msStartFile;
+  //time in mc (4b)
+  if blockNumInfile<>1 then
+  begin
+    lastTimeBlock:=timeBlock;
+  end; 
+
+  //timeBlock := (timeInt64{ * 1000}) - msStartFile;
+  msTime:=Trunc(msTimeF);
+  timeBlock:=msTime;
+
   WriteByteToByte(timeBlock);
+
+  //после того как начали первый блок записали начали считать время блоков
+  flagStartWriteTime:=True;
+
   {2 раза по 4 байта(8b)}
   //4b
   //rez
@@ -734,8 +757,22 @@ begin
   //word in block (4b)
   WriteByteToByte(wordNumInBlock);
   //time in mc (4b)
-  timeBlock := (DateTimeToUnix(Time) * 1000) - msStartFile;
+  //timeBlock := (DateTimeToUnix(Time) * 1000) - msStartFile;
+
+  if blockNumInfile<>1 then
+  begin
+    lastTimeBlock:=timeBlock;
+  end;
+
+
+  //timeBlock := (timeInt64{ * 1000}) - msStartFile;
+  msTime:=Trunc(msTimeF);
+  timeBlock:=msTime;
+
   WriteByteToByte(timeBlock);
+  //после того как начали первый блок записали начали считать время блоков
+  flagStartWriteTime:=True;
+  
   //2 раза по 4 байта(8b)
   //rez
   WriteByteToByte(rez);

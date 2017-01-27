@@ -295,6 +295,14 @@ begin
           end;
           while (true) do application.processmessages; }
 
+          //запись времени в блоках
+          if ((not tlm.tlmBFlag)and(flagStartWriteTime)) then
+          begin
+            msTimeF:=msTimeF+msOnACPBuf;
+            //msTime:=Trunc(msTimeF);
+          end;
+
+
           //проверяем, что сигнал Орбиты подан.
           if {data.}porog>200 then
           begin
@@ -487,6 +495,7 @@ begin
   //разм. мас АЦП
   //DataStep := 1024 * 1024;
   DataStep := 32 * 1024;
+  msOnACPBuf:=DataStep/10000;
   //счетчик проходов АЦП
   countC := 0;
   // Инициализация флага ошибки. ошибок нет 0. сбросим флаги ошибки потока ввода

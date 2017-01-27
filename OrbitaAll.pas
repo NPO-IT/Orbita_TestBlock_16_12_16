@@ -2706,8 +2706,8 @@ procedure TForm1.TimerOutToDiaTimer(Sender: TObject);
 var
   orbAdrCount: integer;
 begin
-  if (flagACPWork) then
-  begin
+  //if (flagACPWork) then
+  //begin
     //form1.Memo1.Lines.Add('Таймер!:');
     //осуществление разбора очередной строки адреса.
     orbAdrCount := 0;
@@ -2740,7 +2740,7 @@ begin
       inc(orbAdrCount);
     end;
     form1.TimerOutToDia.Enabled := false; 
-  end; 
+  //end; 
 end;
 
 
@@ -2760,17 +2760,9 @@ begin
   iSlowArr:=0;
   iContArr:=0;
   outTempAdr:=0;
-
-
-
-
-
-
   
   //флаг для поиска маркера для зап. массива БУС
-  flagWtoBusArray:=false;
-
-
+  flagWtoBusArray:=false;    
 
   porog := 0;
   //нач. иниц. флага подсчета порога
@@ -3366,6 +3358,10 @@ begin
     ShowMessage('Файл записан!');
     //файл tlm записали, можем завершить прием
     form1.startReadACP.Enabled:=true;
+    //переменные для правильной записи времени
+    msTime:=0;
+    msTimeF:=0.0;
+    flagStartWriteTime:=false;
   end;
   //от запуска с останову и наоборот
   tlm.tlmBFlag := not tlm.tlmBFlag;
@@ -3373,6 +3369,8 @@ end;
 
 procedure TForm1.startReadTlmBClick(Sender: TObject);
 begin
+  form1.tlmWriteB.Enabled:=false;
+
   //объект для работы с сигналом
   if infNum=0 then
   begin

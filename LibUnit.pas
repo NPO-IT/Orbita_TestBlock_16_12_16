@@ -203,9 +203,15 @@ var
   numP: integer;
   numPfast: integer;
 
+  //флаг для осущ. перезапуска сбора кадра Орбиты
   flagACPWork:Boolean;
+  flagStartWriteTime:Boolean=false;
+  //время создания файла tlm в формате unixtime
+  msTime:cardinal;
+  msTimeF:Double;
+  //время в мс на 1 буфер АЦП
+  msOnACPBuf:Double;
 
-  
   procedure OutMF(errMF:Integer);
   procedure OutMG(errMG:Integer);
   //функции для проверки соответствует текущая группа или цикл нужной
