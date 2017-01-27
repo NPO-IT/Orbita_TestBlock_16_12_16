@@ -3853,18 +3853,18 @@ begin
     if testOnAllTestDevices then
     begin
       //указываем номер пакета адресов для проверки БВК
-      adrTestNum:=3;
+      {adrTestNum:=3;
       //подгружаем адреса для проверки БВК
       testNeedsAdrF;
       //активируем страницу проверки быстрых
-      form1.PageControl1.ActivePageIndex:=1;
+      form1.PageControl1.ActivePageIndex:=1;}
 
-      {adrTestNum:=4;
+      adrTestNum:=4;
       //подгружаем адреса для проверки СЗУ
 
-       testNeedsAdrF;
+      testNeedsAdrF;
       //активируем страницу проверки быстрых
-      form1.PageControl1.ActivePageIndex:=1;}
+      form1.PageControl1.ActivePageIndex:=1;
 
 
       //запуск питания прибора
@@ -3897,7 +3897,7 @@ begin
 
 
       //запуск проверки БВК
-      Form1.tmrStartTestBVK.Enabled:=True;
+      //Form1.tmrStartTestBVK.Enabled:=True;
 
 
 
