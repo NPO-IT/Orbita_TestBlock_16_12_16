@@ -108,13 +108,18 @@ type
     tmrF: TTimer;
     tmrTestBVK: TTimer;
     btn2: TButton;
-    lbl2: TLabel;
     btn3: TButton;
     btn4: TButton;
     tmrStartTestBVK: TTimer;
     tmrBVK2: TTimer;
     btnPoweroff: TButton;
     btnPowerOn: TButton;
+    sazTab: TTabSheet;
+    sazCht: TChart;
+    brsrsSeries8: TBarSeries;
+    tmrStartTestZU: TTimer;
+    tmrTestZU: TTimer;
+    lbl2: TLabel;
     procedure startReadACPClick(Sender: TObject);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure FormCreate(Sender: TObject);
@@ -166,6 +171,8 @@ type
     procedure tmrBVK2Timer(Sender: TObject);
     procedure btnPoweroffClick(Sender: TObject);
     procedure btnPowerOnClick(Sender: TObject);
+    procedure tmrStartTestZUTimer(Sender: TObject);
+    procedure tmrTestZUTimer(Sender: TObject);
   private
     { Private declarations }
   public
@@ -607,6 +614,7 @@ begin
 
    //Выделяем память под массив температурных параметров, так как они выводятся отдельно
   SetLength(slowArr,acumAnalog);
+  SetLength(contArr,acumContact);
   //Выделяем память под массив температурных параметров, так как они выводятся отдельно
   SetLength(tempArr,acumTemp);
   SetLength(tempArr2,acumTemp);
@@ -2419,7 +2427,7 @@ begin
   //Получение правильного списка адресов
   GetAddrList;
   //Установка списка правильных адресов
-  SetOrbAddr; 
+  SetOrbAddr;
   //отключение масштабирования
   form1.gistSlowAnl.AllowZoom:=false;
   form1.gistSlowAnl.AllowPanning:=pmNone;
@@ -2487,6 +2495,8 @@ begin
     else
     //стоп
     begin
+      form1.TimerOutToDia.Enabled:=False;
+      form1.tmrCont.Enabled:=false;
       flagEnd:=true;
       flagACPWork:=False;
       Form1.mmoTestResult.Clear;
@@ -2717,7 +2727,7 @@ begin
     {data.}contactAdrCount := 0;
     //отчистка формы для предидущей группы
     //form1.diaSlowAnl.Series[0].Clear;
-    form1.diaSlowCont.Series[0].Clear;
+    //form1.diaSlowCont.Series[0].Clear;
     form1.fastDia.Series[0].Clear;
 
 
@@ -3857,14 +3867,8 @@ begin
       //активируем страницу проверки быстрых
       form1.PageControl1.ActivePageIndex:=1;}
 
-      adrTestNum:=4;
-      //подгружаем адреса для проверки СЗУ
-
-      testNeedsAdrF;
-      //активируем страницу проверки быстрых
-      form1.PageControl1.ActivePageIndex:=1;
-
-
+      //подготовка к подаче НОВ
+      SendCommandToISD('http://'+ISDip_2+'/type=2num='+inttostr(5)+'val=1');
       //запуск питания прибора
       SetOnPowerSupply(0);
       SetVoltageOnPowerSupply(1,'2700');
@@ -3889,6 +3893,27 @@ begin
         SetVoltageOnPowerSupply(1,'2700');
         SetOnPowerSupply(1);
       end;
+
+
+
+      startZUtime:=0;
+      modZU:=1; //2
+      adrTestNum:=4; //5
+      form1.mmoTestResult.lines.add('ПРОВЕРКА ПУНКТА 1.1.6 ТУ ЯГАИ.468363.026 (ПРОВЕРКА ОБЕСПЕЧЕНИЯ ИНФОРМАЦИИ)');
+      ZUTestFlag:=True;
+
+      //запуск проверки ЗУ
+      Form1.tmrStartTestZU.Enabled:=True;
+
+
+
+
+
+
+
+
+
+
 
       //Delay_S(5);
 
@@ -5282,18 +5307,7 @@ begin
   form1.tmrBVK2.Enabled:=True;
 end;
 
-procedure TForm1.tmrTestBVKTimer(Sender: TObject);
-const
-  ErrorT=250;//50//250
-var
-  iCh:integer;
-  iT:Integer;
-  setChFlag:Boolean;
-  //timeDownSetCh:cardinal;
-  timeUpSetCh:Cardinal;
-  chTestInt:integer;
 
-  strOut:string;
 //==============================================================================
 // Проверка попадания времени срабатывания в допуск времени срабатывания
 //==============================================================================
@@ -5309,6 +5323,21 @@ begin
   end;
 end;
 //==============================================================================
+
+
+procedure TForm1.tmrTestBVKTimer(Sender: TObject);
+const
+  ErrorT=250;//50//250
+var
+  iCh:integer;
+  iT:Integer;
+  setChFlag:Boolean;
+  //timeDownSetCh:cardinal;
+  timeUpSetCh:Cardinal;
+  chTestInt:integer;
+
+  strOut:string;
+
 begin
   //получаем время системы
   DecodeTime(GetTime,hourBVK,minBVK,secBVK,mSecBVK);
@@ -5662,6 +5691,107 @@ begin
 
 end;
 
+procedure TForm1.tmrStartTestZUTimer(Sender: TObject);
+var
+  i:Integer;
+begin
+  if (startZUtime=0) then
+  begin
+    flagACPWork:=False;
+    
+    if ((modZU=1) or (modZU=7)) then
+    begin
+       //активируем страницу проверки быстрых
+      form1.PageControl1.ActivePageIndex:=1;
+    end
+    else if (((modZU=2) or (modZU=6))) then
+    begin
+      form1.PageControl1.ActivePageIndex:=2;
+    end
+    else
+    begin
+      form1.PageControl1.ActivePageIndex:=0;
+    end;
+
+
+
+
+    //подгружаем адреса для проверки СЗУ
+    testNeedsAdrF;
+    if (not FillAdressParam) then
+    begin
+      Form1.Memo1.Lines.Add('Ошибка переключения адресов!');
+    end;
+  end;
+
+  if  startZUtime=3 then
+  begin
+    //
+    form1.mmoTestResult.Lines.Add(intTostr(modZU));
+
+
+
+    //выставление уровней на первом блоке каналов
+    setValOnCh(modZU);
+    flagACPWork:=true;
+
+     if modZU=2 then
+    begin
+      Form1.Memo1.Lines.Add('1');
+    end;
+
+    //укажем след блок адресов для заполнения
+    inc(adrTestNum);
+  end;
+
+  //form1.Memo1.Lines.Add(IntToStr(modZU));
+  //form1.Memo1.Lines.Add(IntToStr(startZUtime));
+  if startZUtime=5 then   //3
+  begin
+    //подача НОВ
+    SendCommandToISD('http://'+ISDip_2+'/type=2num='+inttostr(5)+'val=0');
+    Form1.tmrStartTestZU.Enabled:=false;
+
+    prBegZU:=True;
+
+    
+
+    //запуск проверки ЗУ.
+    testZU;
+
+    inc(modZU);
+  end;
+  Inc(startZUtime);
+
+  if  (modZU=9) then
+  begin
+    if (ZUTestFlag) then
+    begin
+       form1.mmoTestResult.Lines.Add('ПРОВЕРКА ЗУ: '+'НОРМА');
+    end
+    else
+    begin
+      form1.mmoTestResult.Lines.Add('ПРОВЕРКА ЗУ: '+'!!НЕ НОРМА!!');
+    end;
+
+
+    //размыкаем каналы для завершения проверки ЗУ
+    For i:=1 to Length(IsdZUcontNum4) do
+    begin
+      SendCommandToISD('http://'+ISDip_2+'/type=1num='+
+          IntToStr(IsdZUcontNum4[i])+'val='+intToStr(0)+'work=0');
+      //Delay_ms(5);
+    end;
+
+    //ЗУ проверили
+    Form1.tmrStartTestZU.Enabled:=False;
+    Form1.tmrTestZU.Enabled:=False;
+  end;
+end;
+
+
+
+
 procedure TForm1.tmrStartTestBVKTimer(Sender: TObject);
 begin
   if startBVktime=4 then   //3
@@ -5670,7 +5800,7 @@ begin
 
     Form1.tmrStartTestBVK.Enabled:=false;
     //запуск проверки БВК.
-    testBVK; 
+    testBVK;
   end;
   Inc(startBVktime);
 end;
@@ -5702,5 +5832,144 @@ begin
     SetOnPowerSupply(1);
 end;
 
+procedure TForm1.tmrTestZUTimer(Sender: TObject);
+const
+  TEST_TIME=9000;
+  ERROR_T=250;
+var
+  iCh:Integer;
+  testArrNum:integer;
+
+  flagChange:Boolean;
+
+  intBeg:Integer;
+  intCurr:Integer;
+  
+begin
+  //получаем время системы
+  DecodeTime(GetTime,hourBVK,minBVK,secBVK,mSecBVK);
+  //время в сек.
+  timeZUCarSec:=hourBVK*60*60+minBVK*60+secBVK;
+  //время в мсек
+  timeZUCarMSec:=1000*(hourBVK*60*60+minBVK*60+secBVK)+mSecBVK;
+  Form1.lbl2.Caption:=IntToStr(timeZUCarSec-timeZUPrevSec);
+
+
+  startZUtime:=0;
+  flagChange:=False;
+
+  case modZU-1 of
+    1:
+    begin
+      testArrNum:=round(Length(testStringsZU1_1)/2);
+    end;
+    2:
+    begin
+      testArrNum:=round(Length(testStringsZU1_2)/2);
+    end;
+    3:
+    begin
+      testArrNum:=round(Length(testStringsZU2)/2);
+    end;
+    4:
+    begin
+      testArrNum:=round(Length(testStringsZU3_1)/2);
+    end;
+    5:
+    begin
+      testArrNum:=round(Length(testStringsZU3_2)/2);
+    end;
+    6:
+    begin
+      testArrNum:=round(Length(testStringsZU3_3)/2);
+    end;
+    7:
+    begin
+      testArrNum:=round(Length(testStringsZU4)/2);
+    end;
+  end;
+
+  if (prBegZU) then
+  begin
+    prBegZU:=False;
+    Form1.Memo1.Lines.Add('Нач состояние');
+    //получаем первое состояние проверяемых каналов
+    for iCh:=1 to testArrNum do
+    begin
+      testZU_Arr_pr_BegState[iCh]:=dataZU[iCh];
+      Form1.Memo1.Lines.Add(IntToStr(testZU_Arr_pr_BegState[iCh]));
+    end;  
+    //заносим текущее состояние ЗУ
+    for iCh:=1 to testArrNum do
+    begin
+      testZU_Arr_pr_curr[iCh]:=dataZU[iCh+testArrNum];
+    end;
+  end
+  else
+  begin
+    //получаем новое состояние каналов ЗУ и сохраняем предидущее
+    for iCh:=1 to testArrNum do
+    begin
+      testZU_Arr_pr_prev[iCh]:=testZU_Arr_pr_curr[iCh];
+      testZU_Arr_pr_curr[iCh]:=dataZU[iCh+testArrNum];
+    end;
+
+    //проверяем поменялось ли состояние каналов на ЗУ
+    for iCh:=1 to testArrNum do
+    begin
+      //проверяем произошло ли изменение на канале ЗУ
+      if Abs(testZU_Arr_pr_prev[iCh]-testZU_Arr_pr_curr[iCh])>=10 then
+      begin
+        //проверяем в свое ли время оно произошло
+        if testMTime(TEST_TIME,timeZUCarMSec-timeZUPrevMSec,ERROR_T) then
+        begin
+          intBeg:=testZU_Arr_pr_BegState[iCh];
+          intCurr:=testZU_Arr_pr_curr[iCh];
+          //проверяем выставилось ли на канале состояние
+          if abs(intBeg-intCurr)<=2 then
+          begin
+            form1.mmoTestResult.Lines.Add('Время переключения(мсек):'+intTostr(timeZUCarMSec-timeZUPrevMSec)+' '+'Канал'+intTostr(iCh)+' НОРМА');
+          end
+          else
+          begin
+            form1.mmoTestResult.Lines.Add('Время переключения(мсек):'+intTostr(timeZUCarMSec-timeZUPrevMSec)+' '+'Канал'+intTostr(iCh)+'!!НЕ НОРМА!!');
+            ZUTestFlag:=False;
+          end;
+        end
+        else
+        begin
+          //не в свое
+          form1.mmoTestResult.Lines.Add('Ложное время переключения(мсек):'+intTostr(timeZUCarMSec-timeZUPrevMSec)+' '+'Канал'+intTostr(iCh));
+          ZUtestFlag:=False;
+        end;
+
+        flagChange:=True;
+      end;
+    end;
+  end;
+
+
+  Form1.mmoTestResult.Lines.Add(IntToStr(timeZUCarMSec-timeZUPrevMSec)+' мсек');
+
+  //if testMTime(TEST_TIME,timeZUCarMSec-timeZUPrevMSec,20) then
+  if ((timeZUCarMSec-timeZUPrevMSec)>=(TEST_TIME+300)) then
+  begin
+    flagChange:=True;
+    //время кончилось, проверка блока адресов не норма
+    
+    for iCh:=1 to testArrNum do
+    begin
+       form1.mmoTestResult.Lines.Add('Канал'+intTostr(iCh)+' !!НЕ НОРМА!!');
+    end;
+
+    ZUtestFlag:=False;
+  end;
+
+  if (flagChange) then
+  begin
+    form1.tmrTestZU.Enabled:=false;
+    form1.tmrStartTestZU.Enabled:=true;
+  end;  
+end;
 end.
 

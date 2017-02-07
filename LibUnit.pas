@@ -212,6 +212,13 @@ var
   //время в мс на 1 буфер АЦП
   msOnACPBuf:Double;
 
+  adrTestNum:Integer=0;
+
+  modZU:integer=0;//!!
+  startZUtime:Integer=0;//!!
+  //нач состояние каналов прибора
+  testZU_Arr_pr_BegState:array[1..100] of Integer;//!!
+
   procedure OutMF(errMF:Integer);
   procedure OutMG(errMG:Integer);
   //функции для проверки соответствует текущая группа или цикл нужной

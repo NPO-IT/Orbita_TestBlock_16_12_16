@@ -1,6 +1,6 @@
 object Form1: TForm1
-  Left = 202
-  Top = 229
+  Left = -14
+  Top = 280
   BorderIcons = [biSystemMenu, biMinimize]
   BorderStyle = bsSingle
   Caption = #1057#1087#1077#1094#1080#1072#1083#1100#1085#1086#1077' '#1087#1088#1086#1075#1088#1072#1084#1084#1085#1086#1077' '#1086#1073#1077#1089#1087#1077#1095#1077#1085#1080#1077' '#1086#1073#1088#1072#1073#1086#1090#1082#1080' '#1080' '#1088#1077#1075#1080#1089#1090#1088#1072#1094#1080#1080
@@ -83,6 +83,18 @@ object Form1: TForm1
     Font.Height = -19
     Font.Name = 'MS Sans Serif'
     Font.Style = [fsBold]
+    ParentFont = False
+  end
+  object lbl2: TLabel
+    Left = 48
+    Top = 728
+    Width = 5
+    Height = 24
+    Font.Charset = DEFAULT_CHARSET
+    Font.Color = clWindowText
+    Font.Height = -19
+    Font.Name = 'MS Sans Serif'
+    Font.Style = []
     ParentFont = False
   end
   object GroupBox2: TGroupBox
@@ -168,7 +180,7 @@ object Form1: TForm1
     Top = 0
     Width = 903
     Height = 593
-    ActivePage = TabSheet1
+    ActivePage = ts3
     TabOrder = 0
     object TabSheet1: TTabSheet
       Caption = #1052#1077#1076#1083'.'
@@ -364,13 +376,6 @@ object Form1: TForm1
         Legend.Visible = False
         View3D = False
         TabOrder = 0
-        object lbl2: TLabel
-          Left = 56
-          Top = 8
-          Width = 16
-          Height = 13
-          Caption = 'lbl2'
-        end
         object Series4: TBarSeries
           Marks.ArrowLength = 20
           Marks.Visible = True
@@ -725,6 +730,41 @@ object Form1: TForm1
           XValues.Order = loAscending
           YValues.DateTime = False
           YValues.Name = 'Y'
+          YValues.Multiplier = 1.000000000000000000
+          YValues.Order = loNone
+        end
+      end
+    end
+    object sazTab: TTabSheet
+      Caption = #1057#1040#1047
+      ImageIndex = 5
+      object sazCht: TChart
+        Left = -8
+        Top = 112
+        Width = 905
+        Height = 457
+        BackWall.Brush.Color = clWhite
+        BackWall.Brush.Style = bsClear
+        Title.Font.Charset = DEFAULT_CHARSET
+        Title.Font.Color = clBlue
+        Title.Font.Height = -16
+        Title.Font.Name = 'Arial'
+        Title.Font.Style = [fsBold]
+        Title.Text.Strings = (
+          #1044#1080#1072#1075#1088#1072#1084#1084#1072' '#1057#1040#1047)
+        Legend.Visible = False
+        View3D = False
+        TabOrder = 0
+        object brsrsSeries8: TBarSeries
+          Marks.ArrowLength = 20
+          Marks.Visible = True
+          SeriesColor = 10485760
+          XValues.DateTime = False
+          XValues.Name = 'X'
+          XValues.Multiplier = 1.000000000000000000
+          XValues.Order = loAscending
+          YValues.DateTime = False
+          YValues.Name = 'Bar'
           YValues.Multiplier = 1.000000000000000000
           YValues.Order = loNone
         end
@@ -1553,5 +1593,19 @@ object Form1: TForm1
     OnTimer = tmrBVK2Timer
     Left = 1624
     Top = 16
+  end
+  object tmrStartTestZU: TTimer
+    Enabled = False
+    Interval = 200
+    OnTimer = tmrStartTestZUTimer
+    Left = 1392
+    Top = 96
+  end
+  object tmrTestZU: TTimer
+    Enabled = False
+    Interval = 100
+    OnTimer = tmrTestZUTimer
+    Left = 1424
+    Top = 96
   end
 end

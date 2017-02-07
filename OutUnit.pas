@@ -1193,6 +1193,10 @@ begin
     slowArr[iSlowArr].val:=masGroup[nPoint] shr 2;
   end;
 
+  // запись данных в массив ЗУ
+  dataZU[slowArr[iSlowArr].num+1]:=slowArr[iSlowArr].val;
+  //
+
   inc(iSlowArr);
 
   //вывод на диа
@@ -1244,6 +1248,12 @@ begin
   contVal := OutputValueForBit(masGroup[nPoint], numBitOfValue);
   contArr[iContArr].val:=contVal;
 
+
+  //в массив ЗУ
+  dataZU[contArr[iContArr].num+1]:=contArr[iContArr].val;
+  //
+
+
   inc(iContArr);
 
   inc(numOutPoint);
@@ -1276,9 +1286,28 @@ begin
   nPoint := firstPointValue + offsetForYalkFastParamT21;
   //так как массив группы с 0
   nPoint := nPoint {- 1};
+
+  //form1.Memo1.Lines.Add(intTostr(masGroup[nPoint]));
+
   fastValT21 := masGroup[nPoint] shr 3; //8 разрядов
   try
+
+
     form1.fastDia.Series[0].AddXY(numChanel, fastValT21);
+
+    //!!
+    if (modZU-1=2) then
+    begin
+      Form1.Memo1.Lines.Add('2');
+    end;
+    //!!
+
+
+
+    //в массив ЗУ
+    dataZU[numChanel+1]:=fastValT21;
+    //
+
     {if numChanel=11 then
     begin
       Form1.mmoTestResult.Lines.Add('1');
@@ -1317,7 +1346,13 @@ begin
   fastValT22 := BuildFastValueT22(masGroupAll[nPoint], numBitOfValue);
   try
     form1.fastDia.Series[0].AddXY(numChanel, fastValT22 {rrr});
+
+    //ЗУ
+    dataZU[numChanel+1]:=fastValT22;
+
+    //БВК
     dataMKB[numChanel+1]:=fastValT22;
+
   except
     //ShowMessage('111');
   end;
@@ -1439,13 +1474,23 @@ begin
         end;
       end;
 
+      //=======
+      //проверка МКТ!!
 
       //form1.tempDia.Series[0].AddXY(tempArr[i].num,tempArr[i].val);
-      if ((tempArr2[i].num>=32)or(tempArr2[i].num<0)) then
+      {if ((tempArr2[i].num>=32)or(tempArr2[i].num<0)) then
       begin
         form1.tempDia.Series[0].AddXY(tempArr2[i].num,tempArr2[i].val);
-      end;
-      form1.tempDia.Series[0].AddXY(tempArr2[i].num+1,tempArr2[i].val);
+      end;}
+
+
+      //form1.tempDia.Series[0].AddXY(tempArr2[i].num+1,tempArr2[i].val);
+
+      //form1.tempDia.Series[0].AddXY(tempArr2[i].num,tempArr2[i].val);
+      //========
+
+      form1.tempDia.Series[0].AddXY(tempArr[i].num,tempArr[i].val);
+
       //form1.Memo1.Lines.Add(IntToStr(tempArr[i].num)+' '+IntToStr(tempArr[i].val));
     end;
     iTempArr:=0;
@@ -1455,8 +1500,16 @@ begin
   //form1.tempDia.Series[0].AddXY(numChanel, masGroup[nPoint] shr 1);
 
   //Form1.Memo1.Clear;
+
+
+  //Form1.Memo1.Lines.Add('номер канала '+intTostr(numChanel)+' '+intTostr(masGroup[nPoint] shr 1));
   tempArr[iTempArr].num:=numChanel; //numChanel
   tempArr[iTempArr].val:=masGroup[nPoint] shr 1;
+
+  //в массив для проверки ЗУ
+  dataZU[tempArr[iTempArr].num+1]:=tempArr[iTempArr].val;
+  //
+
   inc(iTempArr);
 
   //увеличим счетчик выведенных темп. параметров

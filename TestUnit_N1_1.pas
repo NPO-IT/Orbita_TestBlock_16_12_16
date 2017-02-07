@@ -124,12 +124,119 @@ var
    'M16П1A20B60C22D11T21','M16П1A20B60C22D21T21','M16П1A20B60C22D31T21','M16П1A20B60C22D41T21'
   );
 
-  testStringsZU:array[1..ZU_NUM_TEST_CH] of string=
+  //П1А20-->П1A30
+   {testStringsZU1:array[1..36] of string=
+  ('M16П1A20B60C22D11T21','M16П1A20B60C22D21T21','M16П1A20B60C22D31T21','M16П1A20B60C22D41T21',
+   'M16П1A20B80C11T21','M16П1A20B80C21T21','M16П1A20B80C31T21','M16П1A20B80C41T21',
+   'M16П1A20B60C31D11T21','M16П1A20B60C31D21T21','M16П1A20B60C31D31T21','M16П1A20B60C31D41T21',
+   'M16П1A20B12T22','M16П1A20B20C12T21','M16П1A20B40T21','M16П1A20B20C22T01',
+   'M16П1A20B60C10D12T11','M16П1A20B60C10D22T11',
+   'M16П1A30B60C22D11T21','M16П1A30B60C22D21T21','M16П1A30B60C22D31T21','M16П1A30B60C22D41T21',
+   'M16П1A30B80C11T21','M16П1A30B80C21T21','M16П1A30B80C31T21','M16П1A30B80C41T21',
+   'M16П1A30B60C31D11T21','M16П1A30B60C31D21T21','M16П1A30B60C31D31T21','M16П1A30B60C31D41T21',
+   'M16П1A30B12T22','M16П1A30B20C12T21','M16П1A30B40T21','M16П1A30B20C22T01',
+   'M16П1A30B60C10D12T11','M16П1A30B60C10D22T11'
+  );}
+
+   testStringsZU1_1:array[1..30] of string=
+  ('M16П1A20B60C22D11T21','M16П1A20B60C22D21T21','M16П1A20B60C22D31T21','M16П1A20B60C22D41T21',
+   'M16П1A20B80C11T21','M16П1A20B80C21T21','M16П1A20B80C31T21','M16П1A20B80C41T21',
+   'M16П1A20B60C31D11T21','M16П1A20B60C31D21T21','M16П1A20B60C31D31T21','M16П1A20B60C31D41T21',
+   'M16П1A20B12T22','M16П1A20B20C12T21','M16П1A20B40T21',
+   'M16П1A30B60C22D11T21','M16П1A30B60C22D21T21','M16П1A30B60C22D31T21','M16П1A30B60C22D41T21',
+   'M16П1A30B80C11T21','M16П1A30B80C21T21','M16П1A30B80C31T21','M16П1A30B80C41T21',
+   'M16П1A30B60C31D11T21','M16П1A30B60C31D21T21','M16П1A30B60C31D31T21','M16П1A30B60C31D41T21',
+   'M16П1A30B12T22','M16П1A30B20C12T21','M16П1A30B40T21'
+  );
+
+   testStringsZU1_2:array[1..4] of string=
+  (  'M16П1A20B60C10D12T11','M16П1A20B60C10D22T11','M16П1A30B60C10D12T11','M16П1A30B60C10D22T11'
+  );
+
+
+  //П1А10-->П2A10
+  testStringsZU2:array[1..8] of string=
+  (
+    'M16П1A10B11T01','M16П1A10B60T01','M16П1A10B20T01','M16П1A10B70T01',
+    'M16П2A10B11T01','M16П2A10B60T01','M16П2A10B20T01','M16П2A10B70T01'
+  );
+
+  //П1А40-->П1A50
+  {testStringsZU3:array[1..24] of string=
+  (
+    'M16П1A40B40T01','M16П1A40B20С22T01','M16П1A40B11T01',
+    'M16П1A40B30C40D12T11','M16П1A40B30C40D22T11','M16П1A40B30C80D12T11','M16П1A40B30C80D22T11',
+    'M16П1A40B30С11T05','M16П1A40B30С30В12T05','M16П1A40B30C21T05','M16П1A40B30C30D22T05',
+    'M16П1A40B20С11T21',
+    'M16П1A50B40T01','M16П1A50B20С22T01','M16П1A50B11T01',
+    'M16П1A50B30C40D12T11','M16П1A50B30C40D22T11','M16П1A50B30C80D12T11','M16П1A50B30C80D22T11',
+    'M16П1A50B30С11T05','M16П1A50B30С30В12T05','M16П1A50B30C21T05','M16П1A50B30C30D22T05',
+    'M16П1A50B20С11T21'
+  );}
+
+  {testStringsZU3_1:array[1..14] of string=
+  (
+    'M16П1A40B40T01','M16П1A40B20С22T01','M16П1A40B11T01',
+    'M16П1A40B30С11T05','M16П1A40B30С30В12T05','M16П1A40B30C21T05','M16П1A40B30C30D22T05',
+    'M16П1A50B40T01','M16П1A50B20С22T01','M16П1A50B11T01',
+    'M16П1A50B30С11T05','M16П1A50B30С30В12T05','M16П1A50B30C21T05','M16П1A50B30C30D22T05'
+  );}
+
+  {testStringsZU3_1:array[1..6] of string=
+  (
+    'M16П1A40B40T01','M16П1A40B20С22T01','M16П1A40B11T01',
+    'M16П1A50B40T01','M16П1A50B20С22T01','M16П1A50B11T01'
+  );}
+
+  testStringsZU3_1:array[1..6] of string=
+  (
+    'M16П1A40B40T01','M16П1A40B20С22T01','M16П1A40B11T01',
+    'M16П1A50B40T01','M16П1A50B20С22T01','M16П1A50B11T01'
+  );
+
+  testStringsZU3_2:array[1..8] of string=
+  (
+    'M16П1A40B30С11T05','M16П1A40B30С30D12T05','M16П1A40B30C21T05','M16П1A40B30C30D22T05',
+    'M16П1A50B30С11T05','M16П1A50B30С30D12T05','M16П1A50B30C21T05','M16П1A50B30C30D22T05'
+  );
+
+
+
+  testStringsZU3_3:array[1..8] of string=
+  (
+    'M16П1A40B30C40D12T11','M16П1A40B30C40D22T11','M16П1A40B30C80D12T11','M16П1A40B30C80D22T11',
+    'M16П1A50B30C40D12T11','M16П1A50B30C40D22T11','M16П1A50B30C80D12T11','M16П1A50B30C80D22T11'
+  );
+
+  //П2А50-->П1A60
+  testStringsZU4:array[1..14] of string=
+  (
+    'M16П2A50B20T21','M16П2A50B30T21','M16П2A50B40T21','M16П2A50B50T21',
+    'M16П2A50B60T21','M16П2A50B70T21','M16П2A50B80T21',
+    'M16П1A60B20T21','M16П1A60B30T21','M16П1A60B40T21','M16П1A60B50T21',
+    'M16П1A60B60T21','M16П1A60B70T21','M16П1A60B80T21'
+  );
+
+
+
+  //МКБ и все
+  {testStringsZU:array[1..24] of string=
+  ('M16П1A20B60C22D11T21','M16П1A20B60C22D21T21','M16П1A20B60C22D31T21','M16П1A20B60C22D41T21',
+   'M16П1A20B80C11T21','M16П1A20B80C21T21','M16П1A20B80C31T21','M16П1A20B80C41T21',
+   'M16П1A20B60C31D11T21','M16П1A20B60C31D21T21','M16П1A20B60C31D31T21','M16П1A20B60C31D41T21',
+   'M16П1A30B60C22D11T21','M16П1A30B60C22D21T21','M16П1A30B60C22D31T21','M16П1A30B60C22D41T21',
+   'M16П1A30B80C11T21','M16П1A30B80C21T21','M16П1A30B80C31T21','M16П1A30B80C41T21',
+   'M16П1A30B60C31D11T21','M16П1A30B60C31D21T21','M16П1A30B60C31D31T21','M16П1A30B60C31D41T21'
+  );}
+
+
+
+  {testStringsZU:array[1..ZU_NUM_TEST_CH] of string=
   ('M16П1A70B11T22P01','M16П1A70B11T22P02','M16П1A70B21T22P01','M16П1A70B21T22P02',
    'M16П1A70B31T22P01','M16П1A70B31T22P02','M16П1A70B41T22P01','M16П1A70B41T22P02',
    'M16П1A30B11T22P01','M16П1A30B11T22P02','M16П1A30B21T22P01','M16П1A30B21T22P02',
    'M16П1A30B31T22P01','M16П1A30B31T22P02','M16П1A30B41T22P01','M16П1A30B41T22P02'
-  );//+
+  );}//+
 
   {testStringsZU:array[1..ZU_NUM_TEST_CH] of string=
   ('M16П1A10B11T22P01','M16П1A10B11T22P02','M16П1A10B21T22P01','M16П1A10B21T22P02',
@@ -268,7 +375,7 @@ var
   startTestBlock:Boolean;
   testFlag_1_1_10_2:Boolean={false}true;
   //startTestMKT3:Boolean;
-  adrTestNum:Integer=0;
+ 
 
   testResult:Boolean;
   allTestFlag:Boolean=true;
@@ -302,6 +409,27 @@ var
   IsdMKBcontNum:array[1..20] of Integer=
   (1,2,3,4,5,6,7,8,9,11,13,15,17,19,21,23,25,27,29,31);
 
+
+
+  IsdZUcontNum1:array[1..20] of Integer=
+  (1,2,3,4,5,6,7,8,9,11,13,15,17,19,21,23,25,27,29,31);
+
+  // IsdMKBcontNum2, IsdMKBcontNum3, IsdMKBcontNum4 неверно указаны каналы для замыкания на ИСД //!!!
+  IsdZUcontNum2:array[1..20] of Integer=
+  (1,2,3,4,5,6,7,8,9,11,13,15,17,19,21,23,25,27,29,31);
+
+  IsdZUcontNum3:array[1..20] of Integer=
+  (1,2,3,4,5,6,7,8,9,11,13,15,17,19,21,23,25,27,29,31);
+
+  IsdZUcontNum4:array[1..20] of Integer=
+  (1,2,3,4,5,6,7,8,9,11,13,15,17,19,21,23,25,27,29,31);
+
+
+  IsdMKB_ZUchVal:array[1..32] of Integer=
+  (50,100,150,200,250,300,350,400,450,500,550,600,650,700,750,800,850,900,950,1000,
+  1050,1100,1150,1200,1250,1300,1350,1400,1450,1500,1600,1700);
+
+
   dataMKB:array[1..20]of Integer;
 
   flagMKBEnd:Boolean=false;
@@ -332,6 +460,25 @@ var
   startBVktime:Integer;
 
 
+  
+
+  timeZUCarSec:Cardinal=0;
+  timeZUCarMSec:Cardinal=0;
+  timeZUPrevSec:Cardinal=0;
+  timeZUPrevMSec:Cardinal=0;
+
+  //нач состояние каналов прибора
+  //testZU_Arr_pr_BegState:array[1..100] of Integer;
+  //предидущее состояние каналов ЗУ
+  testZU_Arr_pr_prev:array[1..100] of Integer;
+  //текущее состояние каналов ЗУ
+  testZU_Arr_pr_curr:array[1..100] of Integer;
+  //значение тестируемых каналов
+  dataZU:array[1..100] of Integer;
+  prBegZU:Boolean;
+  ZUTestFlag:Boolean;
+
+
   procedure testNeedsAdrF;
   //function Test_1_1_10_2():Boolean;
   function testOnAllTestDevices:Boolean;
@@ -357,6 +504,8 @@ var
   function getVoltmetrValue(m_instr_usbtmc:Cardinal):double;
   procedure setFrequencyOnGenerator(freq:real;ampl:real;m_instr_usbtmc:cardinal);
   procedure TestBVK;
+  procedure setValOnCh(modZU:Integer);
+  procedure testZU;
 implementation
   uses OrbitaAll;
 
@@ -877,6 +1026,9 @@ var
   i:Integer;
 begin
   form1.OrbitaAddresMemo.Clear;
+  Form1.diaSlowAnl.Series[0].Clear;
+  Form1.diaSlowCont.Series[0].Clear;
+  Form1.tempDia.Series[0].Clear;
   case adrTestNum of
     0:
     begin
@@ -911,18 +1063,53 @@ begin
     end;
     4:
     begin
-      for i:=1 to Length(testStringsZU) do   //16
+      for i:=1 to Length(testStringsZU1_1) do
       begin
-        form1.OrbitaAddresMemo.Lines.Add(testStringsZU[i]);
+        form1.OrbitaAddresMemo.Lines.Add(testStringsZU1_1[i]);
       end;
     end;
     5:
     begin
-
+      for i:=1 to Length(testStringsZU1_2) do
+      begin
+        form1.OrbitaAddresMemo.Lines.Add(testStringsZU1_2[i]);
+      end;
     end;
     6:
     begin
+      for i:=1 to Length(testStringsZU2) do
+      begin
+        form1.OrbitaAddresMemo.Lines.Add(testStringsZU2[i]);
+      end;
+    end;
+    7:
+    begin
+      for i:=1 to Length(testStringsZU3_1) do
+      begin
+        form1.OrbitaAddresMemo.Lines.Add(testStringsZU3_1[i]);
+      end;
+    end;
+    8:
+    begin
+      for i:=1 to Length(testStringsZU3_2) do
+      begin
+        form1.OrbitaAddresMemo.Lines.Add(testStringsZU3_2[i]);
+      end;
+    end;
+    9:
+    begin
+      for i:=1 to Length(testStringsZU3_3) do
+      begin
+        form1.OrbitaAddresMemo.Lines.Add(testStringsZU3_3[i]);
+      end;
+    end;
 
+    10:
+    begin
+      for i:=1 to Length(testStringsZU4) do
+      begin
+        form1.OrbitaAddresMemo.Lines.Add(testStringsZU4[i]);
+      end;
     end;
   end;  
 end;
@@ -1584,6 +1771,100 @@ begin
   form1.tmrTestBVK.Enabled:=True;
 end;
 //===========================================================
+
+//===========================================================
+//
+//===========================================================
+procedure testZU;
+begin
+  //получаем время запуска
+  DecodeTime(GetTime,hourBVK,minBVK,secBVK,mSecBVK);
+  //время в секундах
+  timeZUPrevSec:=hourBVK*60*60+minBVK*60+secBVK;
+  //время в мс
+  timeZUPrevMSec:=1000*(hourBVK*60*60+minBVK*60+secBVK)+mSecBVK;
+
+  form1.tmrTestZU.Enabled:=True;
+end;
+//===========================================================
+//===========================================================
+//
+//===========================================================
+procedure setValOnCh(modZU:Integer);
+var
+  i:Integer;
+begin
+  case modZU of
+    1:
+    begin
+      For i:=1 to Length(IsdZUcontNum1) do
+      begin
+        SendCommandToISD('http://'+ISDip_2+'/type=1num='+
+            IntToStr(IsdZUcontNum1[i])+'val='+intToStr(IsdMKB_ZUchVal[i])+'work=1');
+        //Delay_ms(1);
+      end;
+    end;
+    3:
+    begin
+      For i:=1 to Length(IsdZUcontNum1) do
+      begin
+        SendCommandToISD('http://'+ISDip_2+'/type=1num='+
+            IntToStr(IsdZUcontNum1[i])+'val='+intToStr(0)+'work=0');
+        //Delay_ms(1);
+      end;
+
+      For i:=1 to Length(IsdZUcontNum2) do
+      begin
+        SendCommandToISD('http://'+ISDip_2+'/type=1num='+
+            IntToStr(IsdZUcontNum2[i])+'val='+intToStr(IsdMKB_ZUchVal[i])+'work=1');
+        //Delay_ms(1);
+      end;
+    end;
+    5:
+    begin
+      For i:=1 to Length(IsdZUcontNum2) do
+      begin
+        SendCommandToISD('http://'+ISDip_2+'/type=1num='+
+            IntToStr(IsdZUcontNum2[i])+'val='+intToStr(0)+'work=0');
+        //Delay_ms(1);
+      end;
+
+      For i:=1 to Length(IsdZUcontNum3) do
+      begin
+        SendCommandToISD('http://'+ISDip_2+'/type=1num='+
+            IntToStr(IsdZUcontNum3[i])+'val='+intToStr(IsdMKB_ZUchVal[i])+'work=1');
+        //Delay_ms(1);
+      end;
+    end;
+    7:
+    begin
+      For i:=1 to Length(IsdZUcontNum3) do
+      begin
+        SendCommandToISD('http://'+ISDip_2+'/type=1num='+
+            IntToStr(IsdZUcontNum3[i])+'val='+intToStr(0)+'work=0');
+        //Delay_ms(1);
+      end;
+
+      For i:=1 to Length(IsdZUcontNum4) do
+      begin
+        SendCommandToISD('http://'+ISDip_2+'/type=1num='+
+            IntToStr(IsdZUcontNum4[i])+'val='+intToStr(IsdMKB_ZUchVal[i])+'work=1');
+        //Delay_ms(1);
+      end;
+    end;
+  end;
+end;
+//============================================================
+
+
+
+
+
+
+
+
+
+
 
 //===========================================================
 //Проверка прибора МКБ2
