@@ -478,6 +478,15 @@ var
   prBegZU:Boolean;
   ZUTestFlag:Boolean;
 
+  //флаг запуска проверки ЗУ
+  flagTestZU:Boolean=True;
+  //флаг запуска проверки БВК
+  flagTestBVK:Boolean=True;
+
+  //признак окончания проверки ЗУ
+  flagTestZUEnd:Boolean=False;
+
+  flagTestBVK_End:Boolean=False;
 
   procedure testNeedsAdrF;
   //function Test_1_1_10_2():Boolean;
@@ -2674,7 +2683,15 @@ begin
 
 
   //начали прием данных с прибора
-  Form1.startReadACP.Click;  //!!!
+  //Form1.startReadACP.Click;  //!!!
+
+  if Form1.startReadACP.Caption='Прием' then
+  begin
+    //начали прием данных с прибора
+    Form1.startReadACP.Click;  //!!!
+  end;
+
+
 
   Delay_S(5);
 

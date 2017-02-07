@@ -3868,17 +3868,17 @@ begin
       form1.PageControl1.ActivePageIndex:=1;}
 
       //подготовка к подаче НОВ
-      SendCommandToISD('http://'+ISDip_2+'/type=2num='+inttostr(5)+'val=1');
+      //SendCommandToISD('http://'+ISDip_2+'/type=2num='+inttostr(5)+'val=1');
       //запуск питания прибора
       SetOnPowerSupply(0);
       SetVoltageOnPowerSupply(1,'2700');
       SetOnPowerSupply(1);
 
-      if Form1.startReadACP.Caption='Прием' then
+      {if Form1.startReadACP.Caption='Прием' then
       begin
         //начали прием данных с прибора
         Form1.startReadACP.Click;  //!!!
-      end;
+      end;}
 
       //проверка подключения источника питания
       if (flagTestDev) then
@@ -3895,15 +3895,34 @@ begin
       end;
 
 
+      //схема проверки
+      //МКБ2,МКТ3,СРН2,ЗУ,БВК
 
-      startZUtime:=0;
+      //---
+      //указываем номер пакета адресов для проверки МКБ2
+      adrTestNum:=1;
+      //подгружаем адреса для проверки МКБ2
+      testNeedsAdrF;
+      //активация вкладки с АЧХ
+      form1.PageControl1.ActivePageIndex:=3;
+      //проверка МКБ2
+      TestMKB2;
+
+
+      //---
+
+
+
+
+
+      {startZUtime:=0;
       modZU:=1; //2
       adrTestNum:=4; //5
       form1.mmoTestResult.lines.add('ПРОВЕРКА ПУНКТА 1.1.6 ТУ ЯГАИ.468363.026 (ПРОВЕРКА ОБЕСПЕЧЕНИЯ ИНФОРМАЦИИ)');
       ZUTestFlag:=True;
 
       //запуск проверки ЗУ
-      Form1.tmrStartTestZU.Enabled:=True;
+      Form1.tmrStartTestZU.Enabled:=True;}
 
 
 
@@ -4142,16 +4161,48 @@ begin
             if (not Form1.tmrTestSRN2.Enabled) then
             begin
               //как только закончили проверку СРН2
-              //все проверки прошли, надо выводить результат
-              if (allTestFlag) then
+
+              if (flagTestZU) then
               begin
-                Form1.mmoTestResult.Lines.Add('ПРОВЕРКА МОДУЛЯ N1-1: НОРМА');
-              end
-              else
-              begin
-                Form1.mmoTestResult.Lines.Add('ПРОВЕРКА МОДУЛЯ N1-1: !!! НЕ НОРМА !!!');
+                flagTestZU:=False;
+                flagTestZUEnd:=false;
+                //проверяем ЗУ
+                startZUtime:=0;
+                modZU:=1; //2
+                adrTestNum:=4; //5
+                form1.mmoTestResult.lines.add('ПРОВЕРКА ПУНКТА 1.1.6 ТУ ЯГАИ.468363.026 (ПРОВЕРКА ОБЕСПЕЧЕНИЯ ИНФОРМАЦИИ)');
+                ZUTestFlag:=True;
+
+                //запуск проверки ЗУ
+                Form1.tmrStartTestZU.Enabled:=True;
               end;
-              Form1.tmrAllTest.Enabled:=False;
+
+              if (flagTestZUEnd) then
+              begin
+                //проверка ЗУ закончена
+
+                if (flagTestBVK) then
+                begin
+                  flagTestBVK:=False;
+                  //запуск проверки БВК
+                  Form1.tmrStartTestBVK.Enabled:=True;
+                end;
+
+                if (flagTestBVK_End) then
+                begin
+                  //закончили проверку БВК
+                  //все проверки прошли, надо выводить результат
+                  if (allTestFlag) then
+                  begin
+                    Form1.mmoTestResult.Lines.Add('ПРОВЕРКА МОДУЛЯ N1-1: НОРМА');
+                  end
+                  else
+                  begin
+                    Form1.mmoTestResult.Lines.Add('ПРОВЕРКА МОДУЛЯ N1-1: !!! НЕ НОРМА !!!');
+                  end;
+                  Form1.tmrAllTest.Enabled:=False;
+                end;
+              end;
             end; 
           end;
         end;  
@@ -5281,7 +5332,7 @@ begin
     FillAdressParam;  //!!!
 
     //запускаем прием данных с прибора.
-    Form1.startReadACP.Click; //временно тут
+    //Form1.startReadACP.Click; //временно тут
 
     Form1.mmoTestResult.Lines.Add('ПРОВЕРКА ПУНКТА 1.1.10.2 ТУ ЯГАИ.468157.116'+
       '(МЕТРОЛОГИЧЕСКИЕ ХАРАКТЕРИСТИКИ ДЛЯ КАНАЛОВ ТМП(ПРИБОР МКТ3)).');
@@ -5632,7 +5683,9 @@ begin
       else
       begin
         form1.mmoTestResult.Lines.Add('ПРОВЕРКА БВК: '+'!!НЕ НОРМА!!');
-      end;  
+      end;
+      //окончание проверки БВК
+      flagTestBVK_End:=True;
       form1.tmrTestBVK.Enabled:=false;
     end;
   end;
@@ -5735,11 +5788,6 @@ begin
     setValOnCh(modZU);
     flagACPWork:=true;
 
-     if modZU=2 then
-    begin
-      Form1.Memo1.Lines.Add('1');
-    end;
-
     //укажем след блок адресов для заполнения
     inc(adrTestNum);
   end;
@@ -5786,6 +5834,11 @@ begin
     //ЗУ проверили
     Form1.tmrStartTestZU.Enabled:=False;
     Form1.tmrTestZU.Enabled:=False;
+
+    //выставляем признак окончания проверки ЗУ
+    flagTestZUEnd:=True;
+    //признак начала проверки БВК
+    flagTestBVK:=True;
   end;
 end;
 
@@ -5944,6 +5997,8 @@ begin
         end;
 
         flagChange:=True;
+
+        
       end;
     end;
   end;

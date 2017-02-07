@@ -1,6 +1,6 @@
 object Form1: TForm1
-  Left = -14
-  Top = 280
+  Left = 68
+  Top = 129
   BorderIcons = [biSystemMenu, biMinimize]
   BorderStyle = bsSingle
   Caption = #1057#1087#1077#1094#1080#1072#1083#1100#1085#1086#1077' '#1087#1088#1086#1075#1088#1072#1084#1084#1085#1086#1077' '#1086#1073#1077#1089#1087#1077#1095#1077#1085#1080#1077' '#1086#1073#1088#1072#1073#1086#1090#1082#1080' '#1080' '#1088#1077#1075#1080#1089#1090#1088#1072#1094#1080#1080
@@ -109,7 +109,7 @@ object Form1: TForm1
     Font.Name = 'MS Sans Serif'
     Font.Style = [fsBold]
     ParentFont = False
-    TabOrder = 6
+    TabOrder = 7
     object Label2: TLabel
       Left = 157
       Top = 1
@@ -1302,7 +1302,7 @@ object Form1: TForm1
     Font.Name = 'MS Sans Serif'
     Font.Style = [fsBold]
     ParentFont = False
-    TabOrder = 8
+    TabOrder = 9
     OnClick = startReadACPClick
   end
   object startReadTlmB: TButton
@@ -1317,7 +1317,7 @@ object Form1: TForm1
     Font.Name = 'MS Sans Serif'
     Font.Style = [fsBold]
     ParentFont = False
-    TabOrder = 9
+    TabOrder = 10
     OnClick = startReadTlmBClick
   end
   object propB: TButton
@@ -1399,11 +1399,11 @@ object Form1: TForm1
   end
   object btn2: TButton
     Left = 1480
-    Top = 80
+    Top = 48
     Width = 75
     Height = 25
     Caption = 'btn2'
-    TabOrder = 10
+    TabOrder = 8
     OnClick = btn2Click
   end
   object btn3: TButton
@@ -1417,11 +1417,11 @@ object Form1: TForm1
   end
   object btn4: TButton
     Left = 1480
-    Top = 48
+    Top = 24
     Width = 75
     Height = 25
     Caption = 'btn4'
-    TabOrder = 7
+    TabOrder = 6
     OnClick = btn4Click
   end
   object btnPoweroff: TButton
@@ -1521,27 +1521,27 @@ object Form1: TForm1
     Enabled = False
     Interval = 3000
     OnTimer = tmr1_1_10_2Timer
-    Left = 1280
+    Left = 1304
     Top = 96
   end
   object tmrAllTest: TTimer
     Enabled = False
     Interval = 3000
     OnTimer = tmrAllTestTimer
-    Left = 1248
+    Left = 1272
     Top = 96
   end
   object tmrRCo: TTimer
     Enabled = False
     Interval = 10000
     OnTimer = tmrRCoTimer
-    Left = 1304
+    Left = 1336
     Top = 96
   end
   object tmrTestSRN2: TTimer
     Enabled = False
     OnTimer = tmrTestSRN2Timer
-    Left = 1336
+    Left = 1368
     Top = 96
   end
   object idhttp2: TIdHTTP
@@ -1564,48 +1564,48 @@ object Form1: TForm1
   object tmrMKB_Dpart: TTimer
     Enabled = False
     OnTimer = tmrMKB_DpartTimer
-    Left = 1416
-    Top = 40
+    Left = 1216
+    Top = 96
   end
   object tmrF: TTimer
     Enabled = False
     Interval = 10000
     OnTimer = tmrFTimer
-    Left = 1416
-    Top = 8
+    Left = 1248
+    Top = 96
   end
   object tmrTestBVK: TTimer
     Enabled = False
     Interval = 100
     OnTimer = tmrTestBVKTimer
-    Left = 1528
-    Top = 8
+    Left = 1480
+    Top = 96
   end
   object tmrStartTestBVK: TTimer
     Enabled = False
     Interval = 200
     OnTimer = tmrStartTestBVKTimer
-    Left = 1560
-    Top = 8
+    Left = 1456
+    Top = 96
   end
   object tmrBVK2: TTimer
     Enabled = False
     OnTimer = tmrBVK2Timer
-    Left = 1624
-    Top = 16
+    Left = 1776
+    Top = 8
   end
   object tmrStartTestZU: TTimer
     Enabled = False
     Interval = 200
     OnTimer = tmrStartTestZUTimer
-    Left = 1392
+    Left = 1400
     Top = 96
   end
   object tmrTestZU: TTimer
     Enabled = False
     Interval = 100
     OnTimer = tmrTestZUTimer
-    Left = 1424
+    Left = 1432
     Top = 96
   end
 end
