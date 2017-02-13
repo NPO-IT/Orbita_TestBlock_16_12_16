@@ -1,5 +1,5 @@
 object Form1: TForm1
-  Left = 68
+  Left = 435
   Top = 129
   BorderIcons = [biSystemMenu, biMinimize]
   BorderStyle = bsSingle
@@ -180,7 +180,7 @@ object Form1: TForm1
     Top = 0
     Width = 903
     Height = 593
-    ActivePage = ts3
+    ActivePage = achx
     TabOrder = 0
     object TabSheet1: TTabSheet
       Caption = #1052#1077#1076#1083'.'
@@ -1521,27 +1521,27 @@ object Form1: TForm1
     Enabled = False
     Interval = 3000
     OnTimer = tmr1_1_10_2Timer
-    Left = 1304
+    Left = 1288
     Top = 96
   end
   object tmrAllTest: TTimer
     Enabled = False
     Interval = 3000
     OnTimer = tmrAllTestTimer
-    Left = 1272
+    Left = 1264
     Top = 96
   end
   object tmrRCo: TTimer
     Enabled = False
     Interval = 10000
     OnTimer = tmrRCoTimer
-    Left = 1336
+    Left = 1312
     Top = 96
   end
   object tmrTestSRN2: TTimer
     Enabled = False
     OnTimer = tmrTestSRN2Timer
-    Left = 1368
+    Left = 1336
     Top = 96
   end
   object idhttp2: TIdHTTP
@@ -1563,6 +1563,7 @@ object Form1: TForm1
   end
   object tmrMKB_Dpart: TTimer
     Enabled = False
+    Interval = 500
     OnTimer = tmrMKB_DpartTimer
     Left = 1216
     Top = 96
@@ -1571,21 +1572,21 @@ object Form1: TForm1
     Enabled = False
     Interval = 10000
     OnTimer = tmrFTimer
-    Left = 1248
+    Left = 1240
     Top = 96
   end
   object tmrTestBVK: TTimer
     Enabled = False
     Interval = 100
     OnTimer = tmrTestBVKTimer
-    Left = 1480
+    Left = 1432
     Top = 96
   end
   object tmrStartTestBVK: TTimer
     Enabled = False
     Interval = 200
     OnTimer = tmrStartTestBVKTimer
-    Left = 1456
+    Left = 1408
     Top = 96
   end
   object tmrBVK2: TTimer
@@ -1598,14 +1599,14 @@ object Form1: TForm1
     Enabled = False
     Interval = 200
     OnTimer = tmrStartTestZUTimer
-    Left = 1400
+    Left = 1360
     Top = 96
   end
   object tmrTestZU: TTimer
     Enabled = False
     Interval = 100
     OnTimer = tmrTestZUTimer
-    Left = 1432
+    Left = 1384
     Top = 96
   end
 end

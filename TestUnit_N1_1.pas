@@ -646,7 +646,7 @@ begin
   Form1.idpsrvr1.Active:=False;
 
   //проверка подключения генератора
-  {if (TestConnect(RigolDg1022_1,m_defaultRM_usbtmc_2[1],m_instr_usbtmc_2[1],viAttr,Timeout)=-1) then
+  if (TestConnect(RigolDg1022_1,m_defaultRM_usbtmc_2[1],m_instr_usbtmc_2[1],viAttr,Timeout)=-1) then
   begin
     form1.Memo1.Lines.Add('Генератор не подключен!');
     flagTestDev:=False;
@@ -654,7 +654,7 @@ begin
   else
   begin
     form1.Memo1.Lines.Add('Генератор подключен!');
-  end;}
+  end;
 
   //замкнули канал для подготовки подачи команды НОВ
   //SendCommandToISD('http://'+ISDip_2+'/type=2num='+inttostr(5)+'val=1');
@@ -1635,7 +1635,7 @@ begin
   //Проверка постоянного напряжения 3,1В
   rezFlag:=true;
   Form1.mmoTestResult.Lines.Add('');
-  Form1.mmoTestResult.Lines.Add('ПРОВЕРКА ПУНКТА 1.2.1 ТУ ЯГАИ.468363.026 (ПРОВЕРКА МЕТРОЛОГИЧЕСКИХ ХАРАКТЕРИСТИК ВИБРАЦИОННЫХ УСИЛИТЕЛЕЙ)');
+  Form1.mmoTestResult.Lines.Add('ПРОВЕРКА ПУНКТА 1.1.11.1 ТУ ЯГАИ.468363.026 (ПРОВЕРКА ВЕЛИЧИНЫ ПОСТОЯННОГО НАПРЯЖЕНИЯ НА ВЫХОДЕ КАЖДОГО КАНАЛА)');
   Form1.mmoTestResult.Lines.Add('');
   SendCommandToISD('http://'+ISDip_2+'/type=3num=33val=1');
   voltmetrValue:=getVoltmetrValue(m_instr_usbtmc_1[0]);
@@ -1703,13 +1703,11 @@ begin
   Form1.mmoTestResult.Lines.Add('');
   if (rezFlag) then
   begin
-    Form1.mmoTestResult.Lines.Add('СООТВЕТСТВИЕ ПРИБОРА МКБ2 ПУНКТУ 1.2.1 ТУ ЯГАИ.468363.026'+
-      '(ПРОВЕРКА МЕТРОЛОГИЧЕСКИХ ХАРАКТЕРИСТИК ВИБРАЦИОННЫХ УСИЛИТЕЛЕЙ) НОРМА')
+    Form1.mmoTestResult.Lines.Add('ПРОВЕРКА ПУНКТА 1.1.11.1 ТУ ЯГАИ.468363.026 (ПРОВЕРКА ВЕЛИЧИНЫ ПОСТОЯННОГО НАПРЯЖЕНИЯ НА ВЫХОДЕ КАЖДОГО КАНАЛА) : НОРМА')
   end
   else
   begin
-    Form1.mmoTestResult.Lines.Add('СООТВЕТСТВИЕ ПРИБОРА МКБ2 ПУНКТУ 1.2.1 ТУ ЯГАИ.468363.026'+
-      '(ПРОВЕРКА МЕТРОЛОГИЧЕСКИХ ХАРАКТЕРИСТИК ВИБРАЦИОННЫХ УСИЛИТЕЛЕЙ) !!!НЕ НОРМА!!!');
+    Form1.mmoTestResult.Lines.Add('ПРОВЕРКА ПУНКТА 1.1.11.1 ТУ ЯГАИ.468363.026 (ПРОВЕРКА ВЕЛИЧИНЫ ПОСТОЯННОГО НАПРЯЖЕНИЯ НА ВЫХОДЕ КАЖДОГО КАНАЛА) : !!!НЕ НОРМА!!!');
   end;
 
 
@@ -1891,12 +1889,14 @@ var
   N:array[1..12] of real;
 
   freqNum:Integer;
+  rezFlagTestF:boolean;
+
 begin
   rezFlag:=True;
   setConf(m_instr_usbtmc_1[0],'CONF:VOLT:AC 10');
   generatorOutOn(m_instr_usbtmc_2[1]);
   form1.mmoTestResult.lines.add('ПРОВЕРКА ПУНКТА 1.2.1 ТУ ЯГАИ.468363.026 (ПРОВЕРКА МЕТРОЛОГИЧЕСКИХ ХАРАКТЕРИСТИК ВИБРАЦИОННЫХ УСИЛИТЕЛЕЙ)');
-  for chNum:=1 to 4 do
+  for chNum:=1 to 4 do  //1
   begin
     Form1.mmoTestResult.Lines.Add('');
     form1.mmoTestResult.lines.add('Проверка усиления '+IntToStr(chNum)+' канала');
@@ -1949,7 +1949,7 @@ begin
     end;
 
     //для каждого канала проверяем его на всех кэф усиления
-    For i:=1 to 8 do
+    For i:=1 to 1 do   // 8 проверяем все кэфы усиления . 1 проверяем на всех каналах только 1 коэф усиления
     begin
       case i of
         1:
@@ -1993,6 +1993,9 @@ begin
           SetFrequencyOnGenerator(20,0.0468,m_instr_usbtmc_2[1]);
         end;
       end;
+
+
+
       //
       setcoefU(k,chNum);
 
@@ -2055,17 +2058,18 @@ begin
 
   if (rezFlag) then
   begin
-    Form1.mmoTestResult.lines.add('Проверка усиления каналов: НОРМА');
+    Form1.mmoTestResult.lines.add('ПРОВЕРКА ПУНКТА 1.2.1 ТУ ЯГАИ.468363.026 (ПРОВЕРКА МЕТРОЛОГИЧЕСКИХ ХАРАКТЕРИСТИК ВИБРАЦИОННЫХ УСИЛИТЕЛЕЙ): НОРМА');
   end
   else
   begin
-    Form1.mmoTestResult.lines.add('Проверка усиления каналов: !!! HE НОРМА !!!');
+    Form1.mmoTestResult.lines.add('ПРОВЕРКА ПУНКТА 1.2.1 ТУ ЯГАИ.468363.026 (ПРОВЕРКА МЕТРОЛОГИЧЕСКИХ ХАРАКТЕРИСТИК ВИБРАЦИОННЫХ УСИЛИТЕЛЕЙ): !!! HE НОРМА !!!');
   end; 
   Form1.mmoTestResult.Lines.Add('');
   //------------
   
   rezFlag:=True;
-  form1.mmoTestResult.Lines.Add(' Построение Амплитудно-частотной характеристики');
+  rezFlagTestF:=true;
+  form1.mmoTestResult.Lines.Add('ПОСТРОЕНИЕ АЧХ');
   //перебираем все 4 канала
   for chNum:=1 to 4 do
   begin
@@ -2074,10 +2078,11 @@ begin
     case chNum  of
       1:
       begin
-        SendCommandToISD('http://'+ISDip_2+'/type=2num=58val=1');
-        SendCommandToISD('http://'+ISDip_2+'/type=2num=53val=1');
-        SendCommandToISD('http://'+ISDip_2+'/type=3num=33val=1');
-        SendCommandToISD('http://'+ISDip_2+'/type=2num=31val=1');
+        SendCommandToISD('http://'+ISDip_2+'/type=2num=58val=1'); // комут генер
+        SendCommandToISD('http://'+ISDip_2+'/type=2num=53val=1'); // комут вх по напряжению
+        SendCommandToISD('http://'+ISDip_2+'/type=3num=33val=1'); // комут вых 1
+        //SendCommandToISD('http://'+ISDip_2+'/type=2num=31val=1');
+
         SendCommandToISD('http://'+ISDip_2+'/type=2num=28val=0');
         SendCommandToISD('http://'+ISDip_2+'/type=2num=29val=0');
         SendCommandToISD('http://'+ISDip_2+'/type=2num=30val=0');
@@ -2138,9 +2143,24 @@ begin
     end;
 
     //перебираем частотные диапазоны для каждого канала
-    for freqNum:=1 to 8 do
+    for freqNum:=6 to 6 do    // 1-8 все. Мы проверяем только 2048 6-6
     begin
       rezFlag:=true;
+
+      SetFrequencyOnGenerator(200000,6,m_instr_usbtmc_2[1]);   //!!
+      Delay_ms(10);
+      //wait(500);
+      voltmetrValue:=GetVoltmetrValue(m_instr_usbtmc_1[0]);
+      Delay_ms(10);
+      //wait(500);
+      voltmetrValue:=GetVoltmetrValue(m_instr_usbtmc_1[0]);
+      Delay_ms(10);
+      //wait(500);
+      parazit:=voltmetrValue;
+      SetConf(m_instr_usbtmc_1[0],'CONF:VOLT:AC 10');
+
+
+
       case freqNum of
         1:
         begin
@@ -2148,7 +2168,7 @@ begin
           case chNum  of
             1:
             begin
-              SetFrequencyOnGenerator(200000,6,m_instr_usbtmc_2[1]);
+              SetFrequencyOnGenerator(200000,6,m_instr_usbtmc_2[1]);   //!!
               Delay_ms(10);
               //wait(500);
               voltmetrValue:=GetVoltmetrValue(m_instr_usbtmc_1[0]);
@@ -2483,12 +2503,13 @@ begin
       if (not rezFlag) then
       begin
         form1.mmoTestResult.Lines.Add('!!!НЕ НОРМА!!!');
+        rezFlagTestF:=false;
         //DeviceTestRezultFlag:=false;
         //RezultFlag3:=false;
       end
       else
       begin
-        form1.mmoTestResult.Lines.Add(' НОРМА');
+        form1.mmoTestResult.Lines.Add('НОРМА');
       end;
 
       form1.mmoTestResult.Lines.Add('');
@@ -2500,12 +2521,32 @@ begin
       //
     end;
   end;
+
+  Form1.achxG.Series[0].Clear;
+  Form1.achxG.Series[1].Clear;
+  Form1.achxG.Series[2].Clear;
+  Application.ProcessMessages;
+
+  if (not rezFlagTestF) then
+  begin
+    form1.mmoTestResult.Lines.Add('ПРОВЕРКА ВЕРХНЕЙ ПОЛОСЫ ПРОПУСКАНИЯ И НЕРАВНОМЕРНОСТИ ЧАСТОТНОЙ ХАРАКТЕРИСТИКИ:  !!!НЕ НОРМА!!!');
+    //DeviceTestRezultFlag:=false;
+    //RezultFlag3:=false;
+  end
+  else
+  begin
+    form1.mmoTestResult.Lines.Add('ПРОВЕРКА ВЕРХНЕЙ ПОЛОСЫ ПРОПУСКАНИЯ И НЕРАВНОМЕРНОСТИ ЧАСТОТНОЙ ХАРАКТЕРИСТИКИ:  НОРМА');
+  end;
+
+  form1.PageControl1.ActivePageIndex:=1;
+
+
   SetConf(m_instr_usbtmc_1[0],'CONF:VOLT:DC 10');
+  //form1.mmoTestResult.Lines.Add('');
+  //form1.mmoTestResult.Lines.Add('Установленное значение напряжения калибровки 6,2В: '+FloatToStrF(setCalibrVoltage(ISDip_2,m_instr_usbtmc_1[0]),ffFixed,6,4));       //Устанавливаем на ИСД напряжение калибровки 6,2В
+  //SetGNDVoltage(ISDip_2,m_instr_usbtmc_1[0]);
   form1.mmoTestResult.Lines.Add('');
-  form1.mmoTestResult.Lines.Add('Установленное значение напряжения калибровки 6,2В: '+FloatToStrF(setCalibrVoltage(ISDip_2,m_instr_usbtmc_1[0]),ffFixed,6,4));       //Устанавливаем на ИСД напряжение калибровки 6,2В
-  SetGNDVoltage(ISDip_2,m_instr_usbtmc_1[0]);
-  form1.mmoTestResult.Lines.Add('');
-  //доразмыкаем не используемые ранее каналы ИСД
+  //доразмыкаем используемые ранее каналы ИСД
   SendCommandToISD('http://'+ISDip_2+'/type=2num=31val=0');
   SendCommandToISD('http://'+ISDip_2+'/type=2num=38val=0');
   SendCommandToISD('http://'+ISDip_2+'/type=2num=45val=0');
@@ -2649,13 +2690,14 @@ begin
   SendCommandToISD('http://'+ISDip_2+'/type=3num=58val=0');
 
   form1.mmoTestResult.Lines.Add('');
+
   if (rezFlag) then
   begin
-    form1.mmoTestResult.Lines.Add('СООТВЕТСТВИЕ ПРИБОРА МКБ2 ПУНКТУ 1.1.3 ТУ ЯГАИ.468363.026 (ПРОВЕРКА ЭЛЕКТРИЧЕСКИХ ПАРАМЕТРОВ ВИБРАЦИОННЫХ УСИЛИТЕЛЕЙ) НОРМА');
+    form1.mmoTestResult.Lines.Add('ПРОВЕРКА ПУНКТА 1.1.3 ТУ ЯГАИ.468363.026 (ПРОВЕРКА ЭЛЕКТРИЧЕСКИХ ПАРАМЕТРОВ ВИБРАЦИОННЫХ УСИЛИТЕЛЕЙ) :НОРМА');
   end
   else
   begin
-    form1.mmoTestResult.Lines.Add('СООТВЕТСТВИЕ ПРИБОРА МКБ2 ПУНКТУ 1.1.3 ТУ ЯГАИ.468363.026 (ПРОВЕРКА ЭЛЕКТРИЧЕСКИХ ПАРАМЕТРОВ ВИБРАЦИОННЫХ УСИЛИТЕЛЕЙ)  !!!НЕ НОРМА!!!');
+    form1.mmoTestResult.Lines.Add('ПРОВЕРКА ПУНКТА 1.1.3 ТУ ЯГАИ.468363.026 (ПРОВЕРКА ЭЛЕКТРИЧЕСКИХ ПАРАМЕТРОВ ВИБРАЦИОННЫХ УСИЛИТЕЛЕЙ) :!!!НЕ НОРМА!!!');
     //DeviceTestRezultFlag:=false;
     {ret := Application.MessageBox(PAnsiChar('СООТВЕТСТВИЕ ПРИБОРА МКБ2 ПУНКТУ 1.1.3 ТУ ЯГАИ.468363.026 (ПРОВЕРКА ЭЛЕКТРИЧЕСКИХ ПАРАМЕТРОВ ВИБРАЦИОННЫХ УСИЛИТЕЛЕЙ) !!!НЕ НОРМА!!!'),PAnsiChar('Дальнейшие действия'),MB_ABORTRETRYIGNORE + MB_ICONQUESTION);
     if ret=IDABORT then
@@ -2710,8 +2752,8 @@ begin
   begin
     SendCommandToISD('http://'+ISDip_2+'/type=1num='+
           IntToStr(IsdMKBcontNum[i])+'val=0work=0');
-    form1.mmoTestResult.Lines.Add(IntToStr(IsdMKBcontNum[i])+'++');
-    Delay_S(1);
+    //form1.mmoTestResult.Lines.Add(IntToStr(IsdMKBcontNum[i])+'++');
+    //Delay_S(1);  ///!!!
   end;//!!!
 
 

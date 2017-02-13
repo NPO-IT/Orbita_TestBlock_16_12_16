@@ -3906,9 +3906,7 @@ begin
       //àêòèâàöèÿ âêëàäêè ñ À×Õ
       form1.PageControl1.ActivePageIndex:=3;
       //ïğîâåğêà ÌÊÁ2
-      TestMKB2;
-
-
+      TestMKB2; 
       //---
 
 
@@ -4565,13 +4563,13 @@ begin
       begin
         form1.mmoTestResult.Lines.Add('Íàïğÿæåíèå ñ ïğèáîğà: '+str+' Â');
         form1.mmoTestResult.Lines.Add('');
-        form1.mmoTestResult.Lines.Add('ÏĞÎÂÅĞÊÀ ÏÓÍÊÒÀ 1.1.10.4 ÒÓ ßÃÀÈ.468157.116 (ÏĞÎÂÅĞÊÀ ÂÛĞÀÁÎÒÊÈ İÒÀËÎÍÍÎÃÎ ÍÀÏĞßÆÅÍÈß 5 Â ÄËß ÊÀËÈÁĞÎÂÊÈ ÃÅÍÅĞÀÒÎĞÍÛÕ ÄÀÒ×ÈÊÎÂ)'+' ÍÎĞÌÀ');
+        form1.mmoTestResult.Lines.Add('ÏĞÎÂÅĞÊÀ ÏÓÍÊÒÀ 1.1.10.4 ÒÓ : ÍÎĞÌÀ');
       end
       else
       begin
         form1.mmoTestResult.Lines.Add('Íàïğÿæåíèå ñ ïğèáîğà: '+str+' Â');
         form1.mmoTestResult.Lines.Add('');
-        form1.mmoTestResult.Lines.Add('ÏĞÎÂÅĞÊÀ ÏÓÍÊÒÀ 1.1.10.4 ÒÓ ßÃÀÈ.468157.116 (ÏĞÎÂÅĞÊÀ ÂÛĞÀÁÎÒÊÈ İÒÀËÎÍÍÎÃÎ ÍÀÏĞßÆÅÍÈß 5 Â ÄËß ÊÀËÈÁĞÎÂÊÈ ÃÅÍÅĞÀÒÎĞÍÛÕ ÄÀÒ×ÈÊÎÂ)'+' !!!ÍÅ ÍÎĞÌÀ!!!');
+        form1.mmoTestResult.Lines.Add('ÏĞÎÂÅĞÊÀ ÏÓÍÊÒÀ 1.1.10.4 ÒÓ : !!!ÍÅ ÍÎĞÌÀ!!!');
         allTestFlag:=False;
       end;
       Form1.tmrTestSRN2.Enabled:=false;
@@ -4636,17 +4634,17 @@ begin
         3:
         begin
           //T21. 8 ğàçğÿäîâ
-          if ((DataMKB[numberChannel]>=23) and (DataMKB[numberChannel]<=27)) then
+          if ((DataMKB[numberChannel]>=15) and (DataMKB[numberChannel]<=17)) then  //23,27 ÒÓ íà ìîäóëü
           begin
             form1.mmoTestResult.Lines.Add('Êàíàë '+IntToStr(numberChannel)+
-              '   ÌÊÁ2: '+IntToStr(DataMKB[numberChannel])+' äâ.åä.   ÍÎĞÌÀ'+'[23,27]')
+              '   ÌÊÁ2: '+IntToStr(DataMKB[numberChannel])+' äâ.åä.   ÍÎĞÌÀ'+'[15,17]')
           end
           else
           begin
             rezFlag:=false;
             //DeviceTestRezultFlag:=false;
             form1.mmoTestResult.Lines.Add('Êàíàë '+IntToStr(numberChannel)+
-              '   ÌÊÁ2: '+IntToStr(DataMKB[numberChannel])+' äâ.åä.   !!!ÍÅ ÍÎĞÌÀ!!!'+'[23,27]')
+              '   ÌÊÁ2: '+IntToStr(DataMKB[numberChannel])+' äâ.åä.   !!!ÍÅ ÍÎĞÌÀ!!!'+'[15,17]')
           end;
         end;
       end;
@@ -4715,19 +4713,20 @@ begin
           end;
         end;
         //--
-        Delay_ms(5);
+        //Delay_ms(5);  ///!!
+        Delay_ms(2);
 
-        form1.mmoTestResult.Lines.Add(IntToStr(IsdMKBcontNum[i])+'++');
+        //form1.mmoTestResult.Lines.Add(IntToStr(IsdMKBcontNum[i])+'++');
        
         Inc(i);
       end;
-      Delay_S(1);
+      //Delay_S(1);
 
       numberChannel:=1;
       Inc(timerMode);
 
       form1.mmoTestResult.Lines.Add('');
-      form1.mmoTestResult.Lines.Add('Ïğîâåğêà ğàáî÷åé øêàëû ïğè íàïğÿæåíèè 6.2Â');
+      form1.mmoTestResult.Lines.Add('ÏĞÎÂÅĞÊÀ ĞÀÁÎ×ÅÉ ØÊÀËÛ ÏĞÈ ÍÀÏĞßÆÅÍÈÈ 6.2Â');
       form1.tmrMKB_Dpart.Enabled:=true;
     end;
 
@@ -4755,17 +4754,17 @@ begin
         end;
         3:
         begin
-          if ((DataMKB[numberChannel]>=243) and (DataMKB[numberChannel]<=247)) then
+          if ((DataMKB[numberChannel]>=240) and (DataMKB[numberChannel]<=242)) then   //243,247 ÒÓ íà ìîäóëü
           begin
             form1.mmoTestResult.Lines.Add('Êàíàë '+IntToStr(numberChannel)+
-              '   ÌÊÁ2: '+IntToStr(DataMKB[numberChannel])+' äâ.åä.   ÍÎĞÌÀ'+'[243,247]')
+              '   ÌÊÁ2: '+IntToStr(DataMKB[numberChannel])+' äâ.åä.   ÍÎĞÌÀ'+'[240,242]')
           end
           else
           begin
             rezFlag:=false;
             //DeviceTestRezultFlag:=false;
             form1.mmoTestResult.Lines.Add('Êàíàë '+IntToStr(numberChannel)+
-              '   ÌÊÁ2: '+IntToStr(DataMKB[numberChannel])+' äâ.åä.   !!!ÍÅ ÍÎĞÌÀ!!!'+'[243,247]')
+              '   ÌÊÁ2: '+IntToStr(DataMKB[numberChannel])+' äâ.åä.   !!!ÍÅ ÍÎĞÌÀ!!!'+'[240,242]')
           end;
         end;
       end;
@@ -4788,20 +4787,20 @@ begin
       form1.tmrMKB_Dpart.Enabled:=false;
       if (rezFlag) then
       begin
-        Form1.mmoTestResult.Lines.Add('Ğåçóëüòàò ïğîâåğêè ğàáî÷åé øêàëû ïğè íàïğÿæåíèè 0Â è 6.2Â : ÍÎĞÌÀ');
+        Form1.mmoTestResult.Lines.Add('ÏĞÎÂÅĞÊÀ ĞÀÁÎ×ÅÉ ØÊÀËÛ ÏĞÈ ÍÀÏĞßÆÅÍÈÈ 0Â è 6.2Â : ÍÎĞÌÀ');
       end
       else
       begin
-        Form1.mmoTestResult.Lines.Add('Ğåçóëüòàò ïğîâåğêè ğàáî÷åé øêàëû ïğè íàïğÿæåíèè 0Â è 6.2Â : !!!ÍÅ ÍÎĞÌÀ!!!');
+        Form1.mmoTestResult.Lines.Add('ÏĞÎÂÅĞÊÀ ĞÀÁÎ×ÅÉ ØÊÀËÛ ÏĞÈ ÍÀÏĞßÆÅÍÈÈ 0Â è 6.2Â : !!!ÍÅ ÍÎĞÌÀ!!!');
       end;
 
       rezFlag:=true;
-      Form1.mmoTestResult.Lines.Add('Ïğîâåğêà òî÷íîñòè èçìåğåíèÿ êàíàëîâ');
+      Form1.mmoTestResult.Lines.Add('ÏĞÎÂÅĞÊÀ ÒÎ×ÍÎÑÒÈ ÈÇÌÅĞÅÍÈß ÊÀÍÀËÎÂ');
       for i:=1 to 20 do
       begin
         SendCommandToISD('http://'+ISDip_2+'/type=1num='+
               IntToStr(IsdMKBcontNum[i])+'val=2500work=1');
-        form1.mmoTestResult.Lines.Add(IntToStr(IsdMKBcontNum[i])+'++');
+        //form1.mmoTestResult.Lines.Add(IntToStr(IsdMKBcontNum[i])+'++');
         Delay_ms(5);
       end;
 
@@ -4832,8 +4831,8 @@ begin
         end;
         3:
         begin
-          calibrMinMKB2:=25;
-          calibrMaxMKB2:=245;
+          calibrMinMKB2:=16; //25
+          calibrMaxMKB2:=241;//245
         end;
       end;
 
@@ -4895,15 +4894,21 @@ begin
       //SetConf(m_instr_usbtmc_1[0],'CONF:VOLT:DC');
       if (rezFlag) then
       begin
-        Form1.mmoTestResult.Lines.Add('Ğåçóëüòàò ïğîâåğêè òî÷íîñòè èçìåğåíèÿ : ÍÎĞÌÀ');
+        Form1.mmoTestResult.Lines.Add('ÏĞÎÂÅĞÊÀ ÒÎ×ÍÎÑÒÈ ÈÇÌÅĞÅÍÈß : ÍÎĞÌÀ');
       end
       else
       begin
-        Form1.mmoTestResult.Lines.Add('Ğåçóëüòàò ïğîâåğêè òî÷íîñòè èçìåğåíèÿ : !!!ÍÅ ÍÎĞÌÀ!!!');
+        Form1.mmoTestResult.Lines.Add('ÏĞÎÂÅĞÊÀ ÒÎ×ÍÎÑÒÈ ÈÇÌÅĞÅÍÈß : !!!ÍÅ ÍÎĞÌÀ!!!');
       end;
 
       //çàâåğøåíèå ïğîâåğêè ÌÊÁ2
       form1.tmrMKB_Dpart.Enabled:=False;
+
+      {while(true) do
+      begin
+        Application.ProcessMessages;
+      end;}
+
       //çàïóñê âïîìîãàòåëüíîãî òàéìåğà äëÿ ïğîâåğêè ÌÊÒ3
       Form1.tmrF.Enabled:=True;
       flagMKBEnd:=True;
@@ -6023,6 +6028,11 @@ begin
   if (flagChange) then
   begin
     form1.tmrTestZU.Enabled:=false;
+    //!! ïğîâåğÿåì ÇÓ òîëüêî íà îñíîâå ÌÊÁ
+    //âûñòàâëÿåì ïğèçíàêè çàâåğøåíèÿ ïğîâåğêè ÇÓ
+    startZUtime:=10;
+    modZU:=9;
+    //
     form1.tmrStartTestZU.Enabled:=true;
   end;  
 end;
