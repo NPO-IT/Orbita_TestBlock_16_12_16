@@ -242,46 +242,61 @@ begin
 //      begin
 //        Application.ProcessMessages;
 //      end;
+      //добавление синхронизации по 1 группе
 
-      if (flagGroup) then
+      {if numChanel=1 then
       begin
-        //необходимо вынимать слова из конкретных групп
-        if isInGroup(groupNum,numChanel) then
+        flagSinxTemp:=True;
+      end;}
+
+      //if (flagSinxTemp) then
+      //begin
+        //==
+        if (flagGroup) then
         begin
-          outToDiaTemp(outStep,numOutPoint,firstPointValue,
-            numChanel,numBitOfValue,maxPointInAdr);
-        end;
-      end
-      else if (flagCikl) then
-      begin
-        if isInCikl(ciklNum,numChanel) then
-        begin
-          //необходимо вынимать слова из конкретных циклов
-          if (flagGroup) then
+          //необходимо вынимать слова из конкретных групп
+          if isInGroup(groupNum,numChanel) then
           begin
-            //необходимо вынимать слова из конкретных групп
-            if isInGroup(groupNum,numChanel) then
+            //Form1.mmoTestResult.Lines.Add('группа '+inttostr(groupNum)+' '+intTostr(numChanel));
+            //while (flagTrue) do Application.ProcessMessages;
+            outToDiaTemp(outStep,numOutPoint,firstPointValue,
+              numChanel,numBitOfValue,maxPointInAdr);
+          end;
+        end
+        else if (flagCikl) then
+        begin
+          if isInCikl(ciklNum,numChanel) then
+          begin
+            //необходимо вынимать слова из конкретных циклов
+            if (flagGroup) then
+            begin
+              //необходимо вынимать слова из конкретных групп
+              if isInGroup(groupNum,numChanel) then
+              begin
+                outToDiaTemp(outStep,numOutPoint,firstPointValue,
+                  numChanel,numBitOfValue,maxPointInAdr);
+              end;
+            end
+            else
             begin
               outToDiaTemp(outStep,numOutPoint,firstPointValue,
                 numChanel,numBitOfValue,maxPointInAdr);
             end;
-          end
-          else
-          begin
-            outToDiaTemp(outStep,numOutPoint,firstPointValue,
-              numChanel,numBitOfValue,maxPointInAdr);
           end;
+        end
+        else
+        begin
+          //вывод происходит в рамках одной группы
+          outToDiaTemp(outStep,numOutPoint,firstPointValue,numChanel,numBitOfValue,maxPointInAdr);
         end;
-      end
-      else
-      begin
-        //вывод происходит в рамках одной группы
-        outToDiaTemp(outStep,numOutPoint,firstPointValue,numChanel,numBitOfValue,maxPointInAdr);
-      end;
+        //==
+      //end;
+
+
     end;
   end;
 end;
-//==============================================================================  
+//==============================================================================
 
 //==============================================================================
 //Вывод на диаграмму температурных  главная
@@ -547,7 +562,11 @@ procedure OutToGistFastParam(firstPointValue: integer;outStep: integer;
   masOutSize: integer; adrtype: {short}integer;var numPfast: integer; numBitOfValue: integer);
 var
   iPoint: integer;
-  //i:integer;
+  i:integer;
+
+  rev:Word;
+  adr:word;
+  b:Word;
   //kk:integer;
 begin
   if (form1.PageControl1.ActivePageIndex = 1) then
@@ -616,94 +635,170 @@ begin
       //T21
       if adrType = 3 then
       begin
-        if numPfast < form1.fastGist.BottomAxis.Maximum then
+        //form1.Memo1.Lines.Add(intTostr(masGroupAll[iPoint]));
+        if (testSAZ) then
         begin
-          setlength(masFastVal, numPfast);
-        
-          masFastVal[numPfast-1] := masGroup[iPoint] shr 3;
-          inc(numPfast);
+          //прием данных с САЗ
+          if (startWSaz) then
+          begin
+            if iTestSazArr=2 then
+            begin
+              testSazArr[iTestSazArr]:=masGroupAll[iPoint];
+              //form1.Memo1.Lines.Add(IntToStr(testSazArr[iTestSazArr])+' M '+ IntToStr(iTestSazArr));
+            end
+            else
+            begin
+              //получаем слова саз 8 разрядов. записываем отдельно каждый байт
+              testSazArr[iTestSazArr]:=(masGroupAll[iPoint] and 2040) shr 3;
+              //form1.Memo1.Lines.Add(IntToStr(testSazArr[iTestSazArr])+' '+IntToStr(iTestSazArr));
+            end;
+            Inc(iTestSazArr);
+          end
+          else
+          begin
+            //перед записью 20 байтов находим маркеры  {1361} 681
+            if masGroupAll[iPoint]=1361 then
+            begin
+              testSazArr[iTestSazArr]:=masGroupAll[iPoint];
+              //form1.Memo1.Lines.Add(IntToStr(testSazArr[iTestSazArr])+'M'+ IntToStr(iTestSazArr));
+              Inc(iTestSazArr);
+              startWSaz:=True;
+            end;
+          end;
+
+          if iTestSazArr=SAZ_NUM+1 then
+          begin
+            graphFlagFastP := false;
+            startWSaz:=false;
+            testSAZ:=False;
+          end;
+
+          iPoint := iPoint + outStep;
+        end
+        else if (testMpiuFlag) then
+        begin
+          //получение данных с МПИУ
+          if iTestMPIUArr<=NUM_TESTVALMPIU then
+          begin
+            rev:=(masGroupAll[iPoint] and 1792) shr 8; //получение перевернутого значения адреса
+            adr:=0;
+            for i:=2 downto 0 do
+            begin
+              b:=rev and 1; //зн. мл бита
+              rev:=rev shr 1;//след бит
+              adr:=adr or (b shl i);//запись бита со старшего
+            end;
+
+            arrTestMPIUParam[iTestMPIUArr].aAdr:=adr;
+            rev:=(masGroupAll[iPoint] and 192) shr 6; //получение перевернутого значения подадреса
+            adr:=0;
+            for i:=1 downto 0 do
+            begin
+              b:=rev and 1;
+              rev:=rev shr 1;
+              adr:=adr or (b shl i);
+            end;
+            arrTestMPIUParam[iTestMPIUArr].paAdr:=adr;
+          end
+          else
+          begin
+            testMpiuFlag:=False;
+          end;
+
           iPoint := iPoint + outStep;
         end
         else
         begin
-          //sleep(2);
-          {Application.ProcessMessages;
-          sleep(2);
-          Application.ProcessMessages; }
-          form1.fastGist.Series[0].Clear;
-          {Application.ProcessMessages;
-          sleep(2);
-          Application.ProcessMessages;}
-          //countPastOut := 1;
-          //form1.downGistFastSize.Enabled := false;
-          //try
-
-          {while countPastOut<=trunc(form1.fastGist.BottomAxis.Maximum) do
+          //вывод на график
+          if numPfast < form1.fastGist.BottomAxis.Maximum then
           begin
+            setlength(masFastVal, numPfast);
+
+            masFastVal[numPfast-1] := masGroup[iPoint] shr 3;
+            inc(numPfast);
+            iPoint := iPoint + outStep;
+          end
+          else
+          begin
+            //sleep(2);
+            {Application.ProcessMessages;
+            sleep(2);
+            Application.ProcessMessages; }
+            form1.fastGist.Series[0].Clear;
+            {Application.ProcessMessages;
+            sleep(2);
+            Application.ProcessMessages;}
+            //countPastOut := 1;
+            //form1.downGistFastSize.Enabled := false;
+            //try
+
+            {while countPastOut<=trunc(form1.fastGist.BottomAxis.Maximum) do
+            begin
+              if form1.fastGist.BottomAxis.Maximum>length(masFastVal) then
+              begin
+                //Application.ProcessMessages;
+                form1.fastGist.Series[0].AddXY(countPastOut,masFastVal[countPastOut-1]);
+                //sleep(1);
+                inc(countPastOut);
+              end;
+            end;}
+
+
+
+
+
+
             if form1.fastGist.BottomAxis.Maximum>length(masFastVal) then
             begin
-              //Application.ProcessMessages;
-              form1.fastGist.Series[0].AddXY(countPastOut,masFastVal[countPastOut-1]);
-              //sleep(1);
-              inc(countPastOut);
+              form1.fastGist.Series[0].AddArray(masFastVal);
             end;
-          end;}
-
-
-
-
-
-
-          if form1.fastGist.BottomAxis.Maximum>length(masFastVal) then
-          begin
-            form1.fastGist.Series[0].AddArray(masFastVal);
-          end;
-          //kk:=form1.fastGist.Series[0].Count
-          //except
-            //ShowMessage('ошибка');
-          //end;
-          //form1.downGistFastSize.Enabled := true;
-          //masFastVal:=nil;
-          Application.ProcessMessages;
-          //sleep(10);
-          sleep(10);
-          //Application.ProcessMessages;
-
-          {if countPastOut>=form1.fastGist.BottomAxis.Maximum then
-          begin
-            form1.fastGist.Series[0].Clear;
-            countPastOut := 1;
-          end;
-          i:=1;
-          while i <= numPfast - 30 do
-          begin
-            if (i mod 700 = 0) then
-            begin
-              //sleep(3);
-             // Application.ProcessMessages;
-            end;
-            //try
-              if ((i >= form1.fastGist.BottomAxis.Minimum) and
-                 (i <= form1.fastGist.BottomAxis.Maximum) and
-                 (i < {length(masFastVal)}{numPfast)
-                {) then
-              begin
-                form1.fastGist.Series[0].AddXY(countPastOut,masFastVal[i]);
-              end;
-              //else
-              //begin
-                //ShowMessage('ErrorT21!');
-              //end
+            //kk:=form1.fastGist.Series[0].Count
             //except
-              //ShowMessage('ErrorT21!');
+              //ShowMessage('ошибка');
             //end;
-            inc(countPastOut);
-            inc(i);
+            //form1.downGistFastSize.Enabled := true;
+            //masFastVal:=nil;
+            Application.ProcessMessages;
+            //sleep(10);
+            sleep(10);
+            //Application.ProcessMessages;
+
+            {if countPastOut>=form1.fastGist.BottomAxis.Maximum then
+            begin
+              form1.fastGist.Series[0].Clear;
+              countPastOut := 1;
+            end;
+            i:=1;
+            while i <= numPfast - 30 do
+            begin
+              if (i mod 700 = 0) then
+              begin
+                //sleep(3);
+               // Application.ProcessMessages;
+              end;
+              //try
+                if ((i >= form1.fastGist.BottomAxis.Minimum) and
+                   (i <= form1.fastGist.BottomAxis.Maximum) and
+                   (i < {length(masFastVal)}{numPfast)
+                  {) then
+                begin
+                  form1.fastGist.Series[0].AddXY(countPastOut,masFastVal[i]);
+                end;
+                //else
+                //begin
+                  //ShowMessage('ErrorT21!');
+                //end
+              //except
+                //ShowMessage('ErrorT21!');
+              //end;
+              inc(countPastOut);
+              inc(i);
+            end;
+            //sleep(3);
+            //masFastVal := nil;}
+            //countPastOut := 1;
+            numPfast := 1;
           end;
-          //sleep(3);
-          //masFastVal := nil;}
-          //countPastOut := 1;
-          numPfast := 1;
         end;
       end;
 
@@ -763,6 +858,25 @@ begin
           numPfast := 1;
         end;
       end;}
+
+//      if ((adrType = 3)and(testMpiuFlag)) then
+//      begin
+//        inc(iTestMPIUArr);
+//      end;
+
+    end;
+
+    if ((adrType = 3)and(testMpiuFlag)) then
+    begin
+      inc(iTestMPIUArr);
+      if chanelIndexFast=0 then
+      begin
+        chanelIndexFast:=1;
+      end
+      else
+      begin
+        chanelIndexFast:=0;
+      end;
     end;
   end;
 end;
@@ -1182,6 +1296,7 @@ begin
   //form1.Memo1.Lines.Add(' ');
   form1.Memo1.Clear;
   slowArr[iSlowArr].num:=numChanel;
+  
   if typeAdr=0 then
   begin
     //10 битов
@@ -1288,9 +1403,18 @@ begin
   nPoint := nPoint {- 1};
 
   //form1.Memo1.Lines.Add(intTostr(masGroup[nPoint]));
+  
 
   fastValT21 := masGroup[nPoint] shr 3; //8 разрядов
   try
+
+
+
+    {while (flagTrue) do
+    begin
+      form1.TimerOutToDia.Enabled:=false;
+      Application.ProcessMessages;
+    end;}
 
 
     form1.fastDia.Series[0].AddXY(numChanel, fastValT21);
@@ -1406,8 +1530,10 @@ var
   j:integer;
 
   k,l,m:Integer;
-  
+
+  currentNum:Integer;
 begin
+
   //вывод первой точки в массиве firstPointValue для текущего адреса
   //необходимо учитывать смещение для отображения за 1 проход адреса 1 точки
   //вычисление смещения, для каждого типа адреса будет свое смещение
@@ -1430,12 +1556,32 @@ begin
   if iTempArr=acumTemp then
   begin
     form1.tempDia.Series[0].Clear;
+
+    currentNum:=0;
+    while currentNum<=iTempArr-1 do
+    begin
+      for i:=0 to iTempArr-1 do
+      begin
+        if tempArr[i].num=currentNum then
+        begin
+          tempArr2[currentNum].num:=tempArr[i].num;
+          tempArr3[currentNum].num:=tempArr[i].num;            
+          tempArr2[currentNum].val:=tempArr[i].val;
+          Inc(currentNum);
+          Break;
+        end;
+      end;
+      //Break;
+    end;
+
+
+
     for i:=0 to iTempArr-1 do
     begin
       //form1.Memo1.Lines.Add(IntToStr(tempArr[i].num)+' '+IntToStr(tempArr[i].val));
       //получим номер шкалы
       //!!!
-      tempArr2[0]:=tempArr[0];
+      {tempArr2[0]:=tempArr[0];
       Dec(tempArr2[0].num);
       tempArr2[1]:=tempArr[length(tempArr)-1];
       inc(tempArr2[1].num);
@@ -1472,12 +1618,51 @@ begin
           end;
           Inc(countRound)
         end;
+      end;  }
+
+
+
+
+
+
+
+      if (startTestBlock) then
+      begin
+        if (countRound=33) then   // countRound=11
+        begin
+          //получаем среднее измерение на каждом канале
+          for l:=1 to 31 do
+          begin
+            //tempArr2[l].val:=tempArr[l].val;
+
+            for m:=1 to countRound-1 do
+            begin
+              acumChVal:=acumChVal+tArrRound[m][l];
+            end;
+            //tempArr2[l].val:=Round(acumChVal/(countRound-1));
+            tempArr3[l].val:=Round(acumChVal/(countRound-1));
+            acumChVal:=0;
+          end;
+          acumChVal:=0;
+          countRound:=1;
+        end
+        else
+        begin
+          //устанавливаем колибровки
+          startTest_1_1_10_2:=setColibr(getScaleNum(tempArr[iColibr].val),tempArr[iColibr].val); //  0,0
+          for k:=1 to 31 do
+          begin
+            tArrRound[countRound][k]:=tempArr2[k].val;
+          end;
+          Inc(countRound)
+        end;
       end;
+
 
       //=======
       //проверка МКТ!!
 
-      //form1.tempDia.Series[0].AddXY(tempArr[i].num,tempArr[i].val);
+
       {if ((tempArr2[i].num>=32)or(tempArr2[i].num<0)) then
       begin
         form1.tempDia.Series[0].AddXY(tempArr2[i].num,tempArr2[i].val);
@@ -1486,11 +1671,16 @@ begin
 
       //form1.tempDia.Series[0].AddXY(tempArr2[i].num+1,tempArr2[i].val);
 
+      
+
       //form1.tempDia.Series[0].AddXY(tempArr2[i].num,tempArr2[i].val);
       //========
 
-      form1.tempDia.Series[0].AddXY(tempArr[i].num,tempArr[i].val);
 
+      //вывод при проверке ЗУ
+      form1.tempDia.Series[0].AddXY(tempArr[i].num,tempArr[i].val);  //i
+      //tempArr[i].num:=0;
+      //tempArr[i].val:=0;
       //form1.Memo1.Lines.Add(IntToStr(tempArr[i].num)+' '+IntToStr(tempArr[i].val));
     end;
     iTempArr:=0;
@@ -1503,7 +1693,14 @@ begin
 
 
   //Form1.Memo1.Lines.Add('номер канала '+intTostr(numChanel)+' '+intTostr(masGroup[nPoint] shr 1));
-  tempArr[iTempArr].num:=numChanel; //numChanel
+  tempArr[iTempArr].num:=numChanel; //numChanel   // iTempArr
+  //запомним номер для кахождения колибровки в буфере
+  if numChanel=0 then
+  begin
+    iColibr:=iTempArr;
+    //form1.Memo1.Lines.Add('1');
+  end;
+
   tempArr[iTempArr].val:=masGroup[nPoint] shr 1;
 
   //в массив для проверки ЗУ
@@ -1816,6 +2013,7 @@ begin
   //form1.Memo1.Lines.Add('цикл№:'+intTostr(ciklNum));
   //вывод на графики. Общая процедура.
   OutToGistGeneral; }
+
   //определяем тип активной вкладки
     case form1.PageControl1.ActivePageIndex  of
       0:

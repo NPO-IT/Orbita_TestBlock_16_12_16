@@ -1,11 +1,11 @@
 object Form1: TForm1
-  Left = 435
-  Top = 129
-  BorderIcons = [biSystemMenu, biMinimize]
+  Left = 192
+  Top = 273
+  BorderIcons = [biSystemMenu]
   BorderStyle = bsSingle
   Caption = #1057#1087#1077#1094#1080#1072#1083#1100#1085#1086#1077' '#1087#1088#1086#1075#1088#1072#1084#1084#1085#1086#1077' '#1086#1073#1077#1089#1087#1077#1095#1077#1085#1080#1077' '#1086#1073#1088#1072#1073#1086#1090#1082#1080' '#1080' '#1088#1077#1075#1080#1089#1090#1088#1072#1094#1080#1080
-  ClientHeight = 834
-  ClientWidth = 1840
+  ClientHeight = 681
+  ClientWidth = 1542
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -73,8 +73,8 @@ object Form1: TForm1
     ParentFont = False
   end
   object lblTestResult: TLabel
-    Left = 1136
-    Top = 96
+    Left = 1144
+    Top = 136
     Width = 62
     Height = 24
     Caption = #1054#1090#1095#1077#1090
@@ -85,16 +85,17 @@ object Form1: TForm1
     Font.Style = [fsBold]
     ParentFont = False
   end
-  object lbl2: TLabel
-    Left = 48
-    Top = 728
-    Width = 5
-    Height = 24
+  object lbNumBlock: TLabel
+    Left = 1184
+    Top = 16
+    Width = 116
+    Height = 20
+    Caption = #1053#1086#1084#1077#1088' '#1073#1083#1086#1082#1072':'
     Font.Charset = DEFAULT_CHARSET
     Font.Color = clWindowText
-    Font.Height = -19
+    Font.Height = -16
     Font.Name = 'MS Sans Serif'
-    Font.Style = []
+    Font.Style = [fsBold]
     ParentFont = False
   end
   object GroupBox2: TGroupBox
@@ -109,7 +110,7 @@ object Form1: TForm1
     Font.Name = 'MS Sans Serif'
     Font.Style = [fsBold]
     ParentFont = False
-    TabOrder = 7
+    TabOrder = 6
     object Label2: TLabel
       Left = 157
       Top = 1
@@ -180,7 +181,7 @@ object Form1: TForm1
     Top = 0
     Width = 903
     Height = 593
-    ActivePage = achx
+    ActivePage = TabSheet2
     TabOrder = 0
     object TabSheet1: TTabSheet
       Caption = #1052#1077#1076#1083'.'
@@ -376,6 +377,18 @@ object Form1: TForm1
         Legend.Visible = False
         View3D = False
         TabOrder = 0
+        object lbl2: TLabel
+          Left = 64
+          Top = 1
+          Width = 5
+          Height = 24
+          Font.Charset = DEFAULT_CHARSET
+          Font.Color = clWindowText
+          Font.Height = -19
+          Font.Name = 'MS Sans Serif'
+          Font.Style = []
+          ParentFont = False
+        end
         object Series4: TBarSeries
           Marks.ArrowLength = 20
           Marks.Visible = True
@@ -397,7 +410,7 @@ object Form1: TForm1
         Left = -2
         Top = 328
         Width = 900
-        Height = 233
+        Height = 241
         AllowPanning = pmNone
         AllowZoom = False
         BackWall.Brush.Color = clWhite
@@ -512,7 +525,7 @@ object Form1: TForm1
         Left = 0
         Top = 328
         Width = 897
-        Height = 234
+        Height = 242
         BackWall.Brush.Color = clWhite
         BackWall.Brush.Style = bsClear
         MarginRight = 6
@@ -735,41 +748,6 @@ object Form1: TForm1
         end
       end
     end
-    object sazTab: TTabSheet
-      Caption = #1057#1040#1047
-      ImageIndex = 5
-      object sazCht: TChart
-        Left = -8
-        Top = 112
-        Width = 905
-        Height = 457
-        BackWall.Brush.Color = clWhite
-        BackWall.Brush.Style = bsClear
-        Title.Font.Charset = DEFAULT_CHARSET
-        Title.Font.Color = clBlue
-        Title.Font.Height = -16
-        Title.Font.Name = 'Arial'
-        Title.Font.Style = [fsBold]
-        Title.Text.Strings = (
-          #1044#1080#1072#1075#1088#1072#1084#1084#1072' '#1057#1040#1047)
-        Legend.Visible = False
-        View3D = False
-        TabOrder = 0
-        object brsrsSeries8: TBarSeries
-          Marks.ArrowLength = 20
-          Marks.Visible = True
-          SeriesColor = 10485760
-          XValues.DateTime = False
-          XValues.Name = 'X'
-          XValues.Multiplier = 1.000000000000000000
-          XValues.Order = loAscending
-          YValues.DateTime = False
-          YValues.Name = 'Bar'
-          YValues.Multiplier = 1.000000000000000000
-          YValues.Order = loNone
-        end
-      end
-    end
   end
   object tlmWriteB: TButton
     Left = 88
@@ -928,7 +906,7 @@ object Form1: TForm1
       Min = 1
       PageSize = 1
       Position = 1
-      TabOrder = 3
+      TabOrder = 2
       OnChange = TrackBar1Change
     end
     object PanelPlayer: TPanel
@@ -1280,15 +1258,6 @@ object Form1: TForm1
       TabOrder = 1
       OnChange = tlmPSpeedChange
     end
-    object Button1: TButton
-      Left = 296
-      Top = 80
-      Width = 75
-      Height = 25
-      Caption = 'Button1'
-      TabOrder = 2
-      OnClick = Button1Click
-    end
   end
   object startReadACP: TButton
     Left = 0
@@ -1367,43 +1336,44 @@ object Form1: TForm1
   end
   object btnAutoTest: TButton
     Left = 1136
-    Top = 8
-    Width = 273
+    Top = 48
+    Width = 225
     Height = 81
     Caption = #1040#1074#1090#1086#1084#1072#1090#1080#1095#1077#1089#1082#1072#1103' '#1087#1088#1086#1074#1077#1088#1082#1072
+    Enabled = False
     Font.Charset = DEFAULT_CHARSET
     Font.Color = clWindowText
     Font.Height = -16
     Font.Name = 'MS Sans Serif'
     Font.Style = [fsBold]
     ParentFont = False
-    TabOrder = 2
+    TabOrder = 7
     OnClick = btnAutoTestClick
   end
   object mmoTestResult: TMemo
     Left = 1136
-    Top = 128
-    Width = 449
-    Height = 625
+    Top = 168
+    Width = 401
+    Height = 513
     ScrollBars = ssBoth
     TabOrder = 13
   end
   object btn1: TButton
-    Left = 1048
-    Top = 712
+    Left = 1040
+    Top = 752
     Width = 75
     Height = 25
     Caption = 'btn1'
-    TabOrder = 14
+    TabOrder = 18
     OnClick = btn1Click
   end
   object btn2: TButton
-    Left = 1480
-    Top = 48
+    Left = 624
+    Top = 784
     Width = 75
     Height = 25
     Caption = 'btn2'
-    TabOrder = 8
+    TabOrder = 19
     OnClick = btn2Click
   end
   object btn3: TButton
@@ -1412,16 +1382,16 @@ object Form1: TForm1
     Width = 75
     Height = 25
     Caption = 'btn3'
-    TabOrder = 17
+    TabOrder = 22
     OnClick = btn3Click
   end
   object btn4: TButton
-    Left = 1480
-    Top = 24
+    Left = 624
+    Top = 744
     Width = 75
     Height = 25
     Caption = 'btn4'
-    TabOrder = 6
+    TabOrder = 16
     OnClick = btn4Click
   end
   object btnPoweroff: TButton
@@ -1430,7 +1400,7 @@ object Form1: TForm1
     Width = 75
     Height = 25
     Caption = 'btnPoweroff'
-    TabOrder = 15
+    TabOrder = 20
     OnClick = btnPoweroffClick
   end
   object btnPowerOn: TButton
@@ -1439,8 +1409,51 @@ object Form1: TForm1
     Width = 75
     Height = 25
     Caption = 'btnPowerOn'
-    TabOrder = 16
+    TabOrder = 21
     OnClick = btnPowerOnClick
+  end
+  object bbb5: TButton
+    Left = 816
+    Top = 752
+    Width = 75
+    Height = 25
+    Caption = 'bbb5'
+    TabOrder = 17
+    OnClick = bbb5Click
+  end
+  object bbb1: TButton
+    Left = 136
+    Top = 744
+    Width = 75
+    Height = 25
+    Caption = 'bbb1'
+    TabOrder = 15
+    OnClick = bbb1Click
+  end
+  object bbb2: TButton
+    Left = 360
+    Top = 728
+    Width = 75
+    Height = 25
+    Caption = 'bbb2'
+    TabOrder = 14
+    OnClick = bbb2Click
+  end
+  object edtNumBlock: TEdit
+    Left = 1336
+    Top = 16
+    Width = 161
+    Height = 21
+    TabOrder = 2
+    OnChange = edtNumBlockChange
+  end
+  object prTestButton: TButton
+    Left = 1360
+    Top = 48
+    Width = 177
+    Height = 81
+    Caption = #1055#1088'. '#1087#1088#1086#1074#1077#1088#1082#1072
+    TabOrder = 8
   end
   object TimerOutToDia: TTimer
     Enabled = False
@@ -1519,30 +1532,30 @@ object Form1: TForm1
   end
   object tmr1_1_10_2: TTimer
     Enabled = False
-    Interval = 3000
+    Interval = 6000
     OnTimer = tmr1_1_10_2Timer
-    Left = 1288
-    Top = 96
+    Left = 1240
+    Top = 136
   end
   object tmrAllTest: TTimer
     Enabled = False
     Interval = 3000
     OnTimer = tmrAllTestTimer
-    Left = 1264
-    Top = 96
+    Left = 1632
+    Top = 8
   end
   object tmrRCo: TTimer
     Enabled = False
-    Interval = 10000
+    Interval = 6000
     OnTimer = tmrRCoTimer
-    Left = 1312
-    Top = 96
+    Left = 1256
+    Top = 136
   end
   object tmrTestSRN2: TTimer
     Enabled = False
     OnTimer = tmrTestSRN2Timer
-    Left = 1336
-    Top = 96
+    Left = 1296
+    Top = 136
   end
   object idhttp2: TIdHTTP
     MaxLineAction = maException
@@ -1563,50 +1576,76 @@ object Form1: TForm1
   end
   object tmrMKB_Dpart: TTimer
     Enabled = False
-    Interval = 500
+    Interval = 400
     OnTimer = tmrMKB_DpartTimer
-    Left = 1216
-    Top = 96
+    Left = 1200
+    Top = 136
   end
   object tmrF: TTimer
     Enabled = False
     Interval = 10000
     OnTimer = tmrFTimer
-    Left = 1240
-    Top = 96
+    Left = 1600
+    Top = 8
   end
   object tmrTestBVK: TTimer
     Enabled = False
     Interval = 100
     OnTimer = tmrTestBVKTimer
-    Left = 1432
-    Top = 96
+    Left = 1408
+    Top = 136
   end
   object tmrStartTestBVK: TTimer
     Enabled = False
     Interval = 200
     OnTimer = tmrStartTestBVKTimer
-    Left = 1408
-    Top = 96
+    Left = 1392
+    Top = 136
   end
   object tmrBVK2: TTimer
     Enabled = False
     OnTimer = tmrBVK2Timer
-    Left = 1776
+    Left = 1696
     Top = 8
   end
   object tmrStartTestZU: TTimer
     Enabled = False
     Interval = 200
     OnTimer = tmrStartTestZUTimer
-    Left = 1360
-    Top = 96
+    Left = 1336
+    Top = 136
   end
   object tmrTestZU: TTimer
     Enabled = False
     Interval = 100
     OnTimer = tmrTestZUTimer
-    Left = 1384
-    Top = 96
+    Left = 1352
+    Top = 136
+  end
+  object idpsrvr2: TIdUDPServer
+    Bindings = <>
+    DefaultPort = 1011
+    Left = 1432
+    Top = 64
+  end
+  object idcmpclnt1: TIdIcmpClient
+    Port = 1
+    OnReply = idcmpclnt1Reply
+    Left = 1408
+    Top = 40
+  end
+  object tmrTestMPIU: TTimer
+    Enabled = False
+    Interval = 5000
+    OnTimer = tmrTestMPIUTimer
+    Left = 1464
+    Top = 136
+  end
+  object tmrTestSaz: TTimer
+    Enabled = False
+    Interval = 5000
+    OnTimer = tmrTestSazTimer
+    Left = 1448
+    Top = 136
   end
 end

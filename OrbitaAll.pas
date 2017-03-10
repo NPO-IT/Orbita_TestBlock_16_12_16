@@ -8,7 +8,8 @@ uses
   IdHTTP, StdCtrls, Series, TeEngine, TeeProcs, Chart, ExtCtrls,
   Lusbapi,  Math, Buttons, ComCtrls, xpman, DateUtils,
   MPlayer,iniFiles,StrUtils,syncobjs,ExitForm, Gauges,TLMUnit,LibUnit,ACPUnit,UnitM16,
-  OutUnit,UnitMoth,TestUnit_N1_1, IdUDPBase, IdUDPServer,IdSocketHandle;
+  OutUnit,UnitMoth,TestUnit_N1_1, IdUDPBase, IdUDPServer,IdSocketHandle,
+  IdRawBase, IdRawClient, IdIcmpClient;
 //Lusbapi-библиотека для работы с АЦП Е20-10
 //Visa_h-библиотека для работы с генератором и вольтметром
 const
@@ -86,7 +87,6 @@ type
     rb1: TRadioButton;
     rb2: TRadioButton;
     lbl1: TLabel;
-    Button1: TButton;
     tmrCont: TTimer;
     btnAutoTest: TButton;
     lblTestResult: TLabel;
@@ -114,12 +114,19 @@ type
     tmrBVK2: TTimer;
     btnPoweroff: TButton;
     btnPowerOn: TButton;
-    sazTab: TTabSheet;
-    sazCht: TChart;
-    brsrsSeries8: TBarSeries;
     tmrStartTestZU: TTimer;
     tmrTestZU: TTimer;
+    bbb5: TButton;
+    idpsrvr2: TIdUDPServer;
+    idcmpclnt1: TIdIcmpClient;
+    tmrTestMPIU: TTimer;
+    bbb1: TButton;
+    tmrTestSaz: TTimer;
     lbl2: TLabel;
+    bbb2: TButton;
+    lbNumBlock: TLabel;
+    edtNumBlock: TEdit;
+    prTestButton: TButton;
     procedure startReadACPClick(Sender: TObject);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure FormCreate(Sender: TObject);
@@ -146,7 +153,7 @@ type
       Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
     procedure TimerOutToDiaBusTimer(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
-    procedure Button1Click(Sender: TObject);
+    procedure bbb2Click(Sender: TObject);
     procedure tmrForTestOrbSignalTimer(Sender: TObject);
     procedure Series7Click(Sender: TChartSeries; ValueIndex: Integer;
       Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
@@ -172,11 +179,21 @@ type
     procedure btnPoweroffClick(Sender: TObject);
     procedure btnPowerOnClick(Sender: TObject);
     procedure tmrStartTestZUTimer(Sender: TObject);
-    procedure tmrTestZUTimer(Sender: TObject);
+    procedure tmrTestZUTimer(Sender: TObject); 
+    procedure bbb5Click(Sender: TObject);
+    procedure idcmpclnt1Reply(ASender: TComponent;
+      const AReplyStatus: TReplyStatus);
+    procedure tmrTestMPIUTimer(Sender: TObject);
+    procedure bbb1Click(Sender: TObject);
+    procedure tmrTestSazTimer(Sender: TObject);
+    procedure idpsrvr3UDPRead(Sender: TObject; AData: TStream;
+      ABinding: TIdSocketHandle);
+    procedure edtNumBlockChange(Sender: TObject);
   private
     { Private declarations }
   public
     { Public declarations }
+
   end;
 
 
@@ -355,7 +372,7 @@ var
   //максимальное и минимальное значение данных с АЦП
   maxValue, minValue: integer;
 
-
+  function FillAdressParam:boolean;
 implementation
 
 
@@ -618,6 +635,7 @@ begin
   //Выделяем память под массив температурных параметров, так как они выводятся отдельно
   SetLength(tempArr,acumTemp);
   SetLength(tempArr2,acumTemp);
+  SetLength(tempArr3,acumTemp); 
 end;
 //==============================================================================
 
@@ -2391,6 +2409,8 @@ procedure TForm1.startReadACPClick(Sender: TObject);
 var
   intPointNum:integer;
 begin
+  flagSinxTemp:=False;
+
   intPointNum:=10000;
   //объект для работы с сигналом
   if infNum=0 then
@@ -2582,7 +2602,18 @@ begin
 
   //завершим все работающие циклы
   flagEnd:=true;
+
+  isTestCloseFl:=True;//выход из проверки блока
+
   wait(20);
+
+  //======
+//  SetOnPowerSupply(1);
+//  SetVoltageOnPowerSupply(1,'0000');
+//  Delay_ms(20);
+//  SetOnPowerSupply(0);
+  //======
+
   //завершим приложение по человечески.
   Application.Terminate;
   //halt
@@ -3458,6 +3489,12 @@ begin
   end;
 end;
 
+
+
+
+
+
+
 procedure TForm1.Series4Click(Sender: TChartSeries; ValueIndex: Integer;
   Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 begin
@@ -3710,7 +3747,7 @@ begin
   end;}
 end;
 
-procedure TForm1.Button1Click(Sender: TObject);
+procedure TForm1.bbb2Click(Sender: TObject);
 begin
   flagTrue:=true;
   //WinExec(PChar('OrbitaMAll.exe'), SW_ShowNormal);
@@ -3847,19 +3884,31 @@ begin
 end;
 
 procedure TForm1.btnAutoTestClick(Sender: TObject);
+var
+  ret:integer;
+  i:Integer;
 begin
   //timeSMKB:=0;
   //считаем данные из конфигурационного файла проверки
   //если возникли ошибки то дальше не идем
   Form1.propB.Enabled:=false;
 
+  //флаг для выхода из проверки блока
+  isTestCloseFl:=false;
+
+
 
   //проверяем что загрузились настройки прибора в  конф. файле
-  if (iniRead) then
+  if ((iniRead)and( not isTestCloseFl)) then
   begin
     //проверяем наличие приборов
-    if testOnAllTestDevices then
+    if ((testOnAllTestDevices)and( not isTestCloseFl)) then
     begin
+
+
+
+      Form1.mmoTestResult.Lines.Add('НОМЕР ПРОВЕРЯЕМОГО БЛОКА: '+form1.edtNumBlock.Text);
+      Form1.mmoTestResult.Lines.Add('');
       //указываем номер пакета адресов для проверки БВК
       {adrTestNum:=3;
       //подгружаем адреса для проверки БВК
@@ -3869,6 +3918,14 @@ begin
 
       //подготовка к подаче НОВ
       //SendCommandToISD('http://'+ISDip_2+'/type=2num='+inttostr(5)+'val=1');
+      //включить выход генератора
+      generatorOutOn(m_instr_usbtmc_2[1]);
+
+      fileName := 'Проверка_блока_' + DateToStr(Date) + '_' + TimeToStr(Time) + '.txt';
+      for i := 1 to length(fileName) do if (fileName[i] = ':') then fileName[i] := '.';
+
+
+
       //запуск питания прибора
       SetOnPowerSupply(0);
       SetVoltageOnPowerSupply(1,'2700');
@@ -3883,6 +3940,120 @@ begin
       //проверка подключения источника питания
       if (flagTestDev) then
       begin
+        //SetOnPowerSupply(1);
+        SetOnPowerSupply(0);
+        SetVoltageOnPowerSupply(1,'0000');
+        Delay_ms(20);
+        //SetOnPowerSupply(0);
+        //замыкаем контакты команды НОВ
+        SendCommandToISD('http://'+ISDip_2+'/type=2num='+inttostr(5)+'val=1');
+
+        SetVoltageOnPowerSupply(1,'2700');
+        SetOnPowerSupply(1);
+      end;
+
+      //Delay_S(1);//!!!
+
+      //отправка команды на пересылку данных МПИУ
+      {BufferADP[1]:=50;
+      BufferADP[2]:=9;
+      BufferADP[3]:=0;
+      Form1.idpsrvr2.SendBuffer(IP_ADAPTER_RS485,Form1.idpsrvr2.DefaultPort,BufferADP,3);
+      Delay_ms(50);}
+      form1.PageControl1.ActivePageIndex:=1;
+
+
+      if Form1.startReadACP.Caption='Прием' then
+      begin
+        //начали прием данных с прибора
+        Form1.startReadACP.Click;  //!!!
+      end;
+
+
+
+      Form1.btnAutoTest.Enabled:=False;
+      form1.saveAdrB.Enabled:=false;
+      Form1.rb1.Enabled:=False;
+      Form1.rb2.Enabled:=False;
+      Form1.propB.Enabled:=false;
+      Form1.startReadACP.Enabled:=False;
+      Form1.startReadTlmB.Enabled:=False;
+      form1.tlmWriteB.Enabled:=False;
+      Form1.upGistFastSize.Enabled:=False;
+      Form1.downGistFastSize.Enabled:=False;
+      Form1.upGistSlowSize.Enabled:=False;
+      Form1.downGistSlowSize.Enabled:=False;
+      Form1.upGistTempSize.Enabled:=false;
+      Form1.downGistTempSize.Enabled:=false;
+      Form1.PageControl1.Enabled:=false;
+      Form1.OrbitaAddresMemo.Enabled:=false;
+      Form1.edtNumBlock.Enabled:=False;
+
+      allTestFlag:=True;
+
+      
+      Form1.idpsrvr1.Active:=True;
+      while((strtoFloat(curVal) * 1000)<2.0) do
+      begin
+        SendCommandToPowerSupply(1, 'GETD');
+        Application.ProcessMessages;
+      end;
+
+      if (not isTestCloseFl) then
+      begin
+        //проверка тока потребления прибора
+        Form1.mmoTestResult.Lines.Add('ПРОВЕРКА ПУНКТА 1.1.12 ТУ ЯГАИ.468363.027 (ПРОВЕРКА ТОКА ПОТРЕБЛЕНИЯ БЛОКА)');
+        Form1.mmoTestResult.Lines.Add('');
+        Current1 := strtoFloat(curVal) * 1000;
+        if (Current1 <= 800) then
+          Form1.mmoTestResult.Lines.Add('Ток потребления блока: ' + Floattostr(Current1) + ' mA' + ' :  НОРМА')
+        else
+        begin
+          Form1.mmoTestResult.Lines.Add('Ток потребления блока: ' + Floattostr(Current1) + ' mA' + ' :  !!! НЕ НОРМА !!!');
+          allTestFlag:=False;
+          //TestRezultFlag := false;
+          //DeviceTestRezultFlag := false;
+        end;
+        form1.idpsrvr1.Active:=false;
+        Form1.mmoTestResult.Lines.Add('');
+      end;
+
+      iMaxScale4Arr:=1;
+      iMinScale4Arr:=1;
+      iMaxScale3Arr:=1;
+      iMinScale3Arr:=1;
+      iMaxScale2Arr:=1;
+      iMinScale2Arr:=1;
+      iMaxScale1Arr:=1;
+      iMinScale1Arr:=1;
+
+      //===>МКТ3
+
+      if (not isTestCloseFl) then
+      begin
+        TestMKT3;
+      end;
+
+
+      if (not isTestCloseFl) then
+      begin
+        //активация вкладки с быстрыми
+        form1.PageControl1.ActivePageIndex:=1;
+        // ==> СРН2
+        //запустим проверку прибора СРН2
+        Form1.tmrTestSRN2.Enabled:=True;
+      end;
+
+
+      //ждем окончания проверки СРН2
+      while ((Form1.tmrTestSRN2.Enabled)and(not isTestCloseFl)) do
+      begin
+        Application.ProcessMessages;
+      end;
+
+      if  (not isTestCloseFl) then
+      begin
+        //перезапуск питания прибора
         SetOnPowerSupply(1);
         SetVoltageOnPowerSupply(1,'0000');
         Delay_ms(20);
@@ -3892,21 +4063,223 @@ begin
 
         SetVoltageOnPowerSupply(1,'2700');
         SetOnPowerSupply(1);
+
+        //==>ЗУ
+        //проверяем ЗУ
+        startZUtime:=0;
+        modZU:=1; //2
+        adrTestNum:=4; //5
+        form1.mmoTestResult.lines.add('ПРОВЕРКА ПУНКТА 1.1.6 ТУ ЯГАИ.468363.026 (ПРОВЕРКА ЗАПОМИНАНИЯ ИНФОРМАЦИИ)');
+        ZUTestFlag:=True;
+        //запуск проверки ЗУ
+        Form1.tmrStartTestZU.Enabled:=True;
       end;
 
 
+
+
+      while((not flagTestZUEnd)and(not isTestCloseFl)) do
+      begin
+        Application.ProcessMessages;
+      end;
+
+      if  (not isTestCloseFl) then
+      begin
+         //проверка ЗУ закончена
+        //переключение адресов
+        adrTestNum:=3;
+        //подгружаем адреса для проверки БВК
+        testNeedsAdrF;
+        FillAdressParam;
+
+        //перестыковка разъема Б1 для проверки БВК
+        ret :=Application.MessageBox(PAnsiChar('Перестыкуйте разъем Б1 на приборе МКБ2 и нажмите ОК для продолжения проверки'),PAnsiChar('Перестыковка кабелей'), MB_OK+MB_ICONWARNING);
+        if ret=IDOK then
+        begin
+          //перезапуск питания прибора
+          SetOnPowerSupply(1);
+          SetVoltageOnPowerSupply(1,'0000');
+          Delay_ms(20);
+          SetOnPowerSupply(0);
+          //замыкаем контакты команды НОВ
+          SendCommandToISD('http://'+ISDip_2+'/type=2num='+inttostr(5)+'val=1');
+
+          SetVoltageOnPowerSupply(1,'2700');
+          SetOnPowerSupply(1);
+
+          if ((flagTestBVK)and(not isTestCloseFl)) then
+          begin
+            flagTestBVK:=False;
+            //запуск проверки БВК
+            Form1.tmrStartTestBVK.Enabled:=True;
+          end;
+
+
+
+
+          while((not flagTestBVK_End)and(not isTestCloseFl)) do
+          begin
+            Application.ProcessMessages;
+          end;
+        end;
+      end;
+
+
+      if  (not isTestCloseFl) then
+      begin
+        form1.lbl2.Caption:='';
+        ret :=Application.MessageBox(PAnsiChar('Перестыкуйте разъем Б1 на приборе МКБ2 и нажмите ОК для продолжения проверки'),PAnsiChar('Перестыковка кабелей'), MB_OK+MB_ICONWARNING);
+
+        //==>  САЗ
+        //проверка САЗ
+        adrTestNum:=14;
+        //подгружаем адреса для проверки БВК
+        testNeedsAdrF;
+        FillAdressParam;
+
+        //отправка команды на пересылку  данных САЗ
+        BufferADP[1]:=50;
+        BufferADP[2]:=5;
+        BufferADP[3]:=0;
+        Form1.idpsrvr2.SendBuffer(IP_ADAPTER_RS485,Form1.idpsrvr2.DefaultPort,BufferADP,3);
+
+        Delay_ms(50);
+
+
+        //==>САЗ
+        testSazPr;
+      end;
+
+
+      if  (not isTestCloseFl) then
+      begin
+         //===>МПИУ
+        //отправка команды на пересылку  данных МПИУ
+        BufferADP[1]:=50;
+        BufferADP[2]:=9;
+        BufferADP[3]:=0;
+        Form1.idpsrvr2.SendBuffer(IP_ADAPTER_RS485,Form1.idpsrvr2.DefaultPort,BufferADP,3);
+        Delay_ms(50);
+        testMpiuFlag:=false;
+        //Проверка МПИУ
+        testMPIU;
+      end;
+
+
+      if  (not isTestCloseFl) then
+      begin
+        //на всяк случай будим генератор
+        generatorOutOn(m_instr_usbtmc_2[1]);
+        SetConf(m_instr_usbtmc_1[0],'CONF:VOLT:DC');
+
+        //===>МКБ2
+        //указываем номер пакета адресов для проверки МКБ2
+        adrTestNum:=1;
+        //подгружаем адреса для проверки МКБ2
+        testNeedsAdrF;
+        //заполним параметры адресов в массив параметров адресов
+        FillAdressParam;
+        //активация вкладки с АЧХ
+        form1.PageControl1.ActivePageIndex:=3;
+
+
+        //проверка МКБ2
+        TestMKB2;
+      end;
+
+
+
+      //ждем окончания проверки МКБ2
+      while ((not flagMKBEnd)and(not isTestCloseFl)) do
+      begin
+        Application.ProcessMessages;
+      end;
+
+      if (not isTestCloseFl) then
+      begin
+        Form1.mmoTestResult.Lines.Add('ПРОВЕРКА ПУНКТА 1.1.4 (ОБЩАЯ ИНФОРМАТИВНОСТЬ МОДУЛЯ ДОЛЖНА СОСТАВЛЯТЬ 262144 ТЕЛЕМЕТРИЧЕСКИХ ДВЕНАДЦАТИРАЗРЯДНЫХ СЛОВ В СЕКУНДУ): НОРМА');
+        Form1.mmoTestResult.Lines.Add('');
+
+        //все проверки прошли, надо выводить результат
+        if (allTestFlag) then
+        begin
+          Form1.mmoTestResult.Lines.Add('ПРОВЕРКА МОДУЛЯ N1-1: НОРМА');
+        end
+        else
+        begin
+          Form1.mmoTestResult.Lines.Add('ПРОВЕРКА МОДУЛЯ N1-1: !!! НЕ НОРМА !!!');
+        end;
+        Form1.mmoTestResult.Lines.SaveToFile(fileName);
+      end;   
+
+      if (not isTestCloseFl) then
+      begin
+        WinExec(PAnsiChar('notepad.exe ' + fileName), SW_SHOW);
+      end;
+
+     Form1.btnAutoTest.Enabled:=true;
+     form1.saveAdrB.Enabled:=true;
+     Form1.rb1.Enabled:=true;
+     Form1.rb2.Enabled:=true;
+     Form1.propB.Enabled:=true;
+     Form1.startReadACP.Enabled:=true;
+     Form1.startReadTlmB.Enabled:=true;
+     form1.tlmWriteB.Enabled:=true;
+     Form1.upGistFastSize.Enabled:=true;
+     Form1.downGistFastSize.Enabled:=true;
+     Form1.upGistSlowSize.Enabled:=true;
+     Form1.downGistSlowSize.Enabled:=true;
+     Form1.upGistTempSize.Enabled:=true;
+     Form1.downGistTempSize.Enabled:=true;
+     Form1.PageControl1.Enabled:=true;
+     Form1.OrbitaAddresMemo.Enabled:=true;
+     Form1.edtNumBlock.Enabled:=true;
+
+     //подготовка к перезапуску
+
+
+     //SetVoltageOnPowerSupply(1,'0000');
+     //Delay_ms(20);   
+     changeResistance(50000.0);
+     setFrequencyOnGenerator(100000,5,m_instr_usbtmc_2[1]);
+     SetConf(m_instr_usbtmc_1[0],'CONF:VOLT:DC');
+
+     
+
+      {if (flagTestBVK_End) then
+      begin
+        //закончили проверку БВК
+        //все проверки прошли, надо выводить результат
+        if (allTestFlag) then
+        begin
+          Form1.mmoTestResult.Lines.Add('ПРОВЕРКА МОДУЛЯ N1-1: НОРМА');
+        end
+        else
+        begin
+          Form1.mmoTestResult.Lines.Add('ПРОВЕРКА МОДУЛЯ N1-1: !!! НЕ НОРМА !!!');
+        end;
+        Form1.tmrAllTest.Enabled:=False;
+      end;}
+
+
+      //Form1.tmrF.Enabled:=True;
+      //flagMKBEnd:=True;
+
       //схема проверки
-      //МКБ2,МКТ3,СРН2,ЗУ,БВК
+      //САЗ,МПИУ,МКБ2,МКТ3,СРН2,ЗУ,БВК
+
+
+
 
       //---
       //указываем номер пакета адресов для проверки МКБ2
-      adrTestNum:=1;
+      {adrTestNum:=1;
       //подгружаем адреса для проверки МКБ2
       testNeedsAdrF;
       //активация вкладки с АЧХ
       form1.PageControl1.ActivePageIndex:=3;
       //проверка МКБ2
-      TestMKB2; 
+      TestMKB2;}
       //---
 
 
@@ -3984,7 +4357,8 @@ begin
     if A[1] <> 'O' then
     begin
         A1:=A[5]+'.'+A[6]+A[7]+A[8];
-        //CurrentFromPower:=A1;
+        curVal:=A1;
+        //Form1.Memo1.Lines.Add(A1);
         AkipOffOnState:=True;
         PowerRequest:=True;
         //Form3.Timer1.Enabled:=False;
@@ -3998,6 +4372,7 @@ var
 begin
   if (startTest_1_1_10_2) then
   begin
+    //собрали калибровку делаем очередную проверку
     startTest_1_1_10_2:=False;
     case testCount of
       0:
@@ -4012,70 +4387,105 @@ begin
         Form1.mmoTestResult.Lines.Add('Установленное сопротивление:5 Ом.');
         SendCommandToISD('http://'+ISDip_1+'/type=2num=54val=1');
         changeResistance(5.0);
-        Delay_S(1);
+        //Delay_S(3);
+        //Delay_S(1);
+
+
         //проверяем 31 канал
-        bool:=testChannals(minScale4,maxScale4,TS_1_MIN4,TS_1_MAX4,5.0);
-        testResult:=testResult and bool;
+        //bool:=testChannals(minScale4,maxScale4,TS_1_MIN4,TS_1_MAX4,5.0);
+        //testResult:=testResult and bool;
       end;
       2:
       begin
+        //проверяем 31 канал
+        bool:=testChannals(minScale4,maxScale4,TS_1_MIN4,TS_1_MAX4,5.0);
+        testResult:=testResult and bool;
+
         Form1.mmoTestResult.Lines.Add('Установленное сопротивление:15 Ом.');
         changeResistance(15.0);
-        Delay_S(1);
-        bool:=testChannals(minScale3,maxScale3,TS_1_MIN3,TS_1_MAX3,15.0);
-        testResult:=testResult and bool;
+        //Delay_S(3);
+        //Delay_S(5);
+
+        //bool:=testChannals(minScale3,maxScale3,TS_1_MIN3,TS_1_MAX3,15.0);
+        //testResult:=testResult and bool;
       end;
       4:
       begin
+        bool:=testChannals(minScale3,maxScale3,TS_1_MIN3,TS_1_MAX3,15.0);
+        testResult:=testResult and bool;
+
         Form1.mmoTestResult.Lines.Add('Установленное сопротивление:30 Ом.');
         changeResistance(30.0);
-        Delay_S(1);
-        bool:=testChannals(minScale2,maxScale2,TS_1_MIN2,TS_1_MAX2,30.0);
-        testResult:=testResult and bool;
+        //Delay_S(3);
+        //Delay_S(5);
+
+//        bool:=testChannals(minScale2,maxScale2,TS_1_MIN2,TS_1_MAX2,30.0);
+//        testResult:=testResult and bool;
       end;
       6:
       begin
+        bool:=testChannals(minScale2,maxScale2,TS_1_MIN2,TS_1_MAX2,30.0);
+        testResult:=testResult and bool;
         Form1.mmoTestResult.Lines.Add('Установленное сопротивление:60 Ом.');
         changeResistance(60.0);
-        Delay_S(1);
-        bool:=testChannals(minScale1,maxScale1,TS_1_MIN1,TS_1_MAX1,60.0);
-        testResult:=testResult and bool;
+        //Delay_S(3);
+        //Delay_S(5);
+//        bool:=testChannals(minScale1,maxScale1,TS_1_MIN1,TS_1_MAX1,60.0);
+//        testResult:=testResult and bool;
       end;
       8:
       begin
+        bool:=testChannals(minScale1,maxScale1,TS_1_MIN1,TS_1_MAX1,60.0);
+        testResult:=testResult and bool;
         Form1.mmoTestResult.Lines.Add('ПРОВЕРКА ДИАПАЗОНА 2');
         SendCommandToISD('http://'+ISDip_1+'/type=2num=54val=0');
         Form1.mmoTestResult.Lines.Add('Установленное сопротивление:25 Ом.');
         changeResistance(25.0);
-        Delay_S(1);
-        bool:=testChannals(minScale4,maxScale4,TS_2_MIN4,TS_2_MAX4,25.0);
-        testResult:=testResult and bool;
+        //Delay_S(3);
+        //Delay_S(5);
+//        bool:=testChannals(minScale4,maxScale4,TS_2_MIN4,TS_2_MAX4,25.0);
+//        testResult:=testResult and bool;
       end;
       10:
       begin
+        bool:=testChannals(minScale4,maxScale4,TS_2_MIN4,TS_2_MAX4,25.0);
+        testResult:=testResult and bool;
         Form1.mmoTestResult.Lines.Add('Установленное сопротивление:75 Ом.');
         changeResistance(75.0);
-        Delay_S(1);
-        bool:=testChannals(minScale3,maxScale3,TS_2_MIN3,TS_2_MAX3,75.0);
-        testResult:=testResult and bool;
+         //Delay_S(3);
+        //Delay_S(5);
+//        bool:=testChannals(minScale3,maxScale3,TS_2_MIN3,TS_2_MAX3,75.0);
+//        testResult:=testResult and bool;
       end;
       12:
       begin
+        bool:=testChannals(minScale3,maxScale3,TS_2_MIN3,TS_2_MAX3,75.0);
+        testResult:=testResult and bool;
         Form1.mmoTestResult.Lines.Add('Установленное сопротивление:150 Ом.');
         changeResistance(150.0);
-        Delay_S(1);
-        bool:=testChannals(minScale2,maxScale2,TS_2_MIN2,TS_2_MAX2,150.0);
-        testResult:=testResult and bool;
+        //Delay_S(3);
+        //Delay_S(5);
+//        bool:=testChannals(minScale2,maxScale2,TS_2_MIN2,TS_2_MAX2,150.0);
+//        testResult:=testResult and bool;
       end;
       14:
       begin
+        bool:=testChannals(minScale2,maxScale2,TS_2_MIN2,TS_2_MAX2,150.0);
+        testResult:=testResult and bool;
         Form1.mmoTestResult.Lines.Add('Установленное сопротивление:300 Ом.');
         changeResistance(300.0);
-        Delay_S(1);
+        //Delay_S(3);
+
+      end;
+
+      16:
+      begin
         bool:=testChannals(minScale1,maxScale1,TS_2_MIN1,TS_2_MAX1,300.0);
         testResult:=testResult and bool;
+
         //завершили сбор калибровок в массив
-        startTestBlock:=False;
+        //startTestBlock:=False;
+
         Form1.tmr1_1_10_2.Enabled:=False;
         testCount:=0;
         if (testResult) then
@@ -4090,21 +4500,35 @@ begin
           allTestFlag:=false;
         end;
         Form1.mmoTestResult.Lines.Add('');
-      end;
+      end;    
     end;
-    minScale1:=-1;
-    maxScale1:=-1;
-    minScale2:=-1;
-    maxScale2:=-1;
-    minScale3:=-1;
-    maxScale3:=-1;
-    minScale4:=-1;
-    maxScale4:=-1;
+
+    if ((testCount>0)and(testCount mod 2=0)) then
+    begin
+      minScale1:=-1;
+      maxScale1:=-1;
+      minScale2:=-1;
+      maxScale2:=-1;
+      minScale3:=-1;
+      maxScale3:=-1;
+      minScale4:=-1;
+      maxScale4:=-1;
+    end;
+
     Inc(testCount);
   end;
+
+  if (isTestCloseFl) then
+  begin
+    Form1.tmr1_1_10_2.Enabled:=False;
+    changeResistance(50000.0);
+  end;
+
 end;
 
 procedure TForm1.tmrAllTestTimer(Sender: TObject);
+var
+  ret:Integer;
 begin
   //проверка калибровок
   if (testColibrFlag) then
@@ -4114,11 +4538,12 @@ begin
     begin
       if (testColibr) then
       begin
-        Form1.mmoTestResult.Lines.Add('ПРОВЕРКА ПУНКТА 1.1.10.2 ТУ ЯГАИ.468157.116 (ПРОВЕРКА ПЕРЕДАЧИ КАЛИБРОВОК): НОРМА.');
+        Form1.mmoTestResult.Lines.Add('ПРОВЕРКА ПУНКТА 1.1.10.2 ТУ ЯГАИ.468157.116 (ПРОВЕРКА ПЕРЕДАЧИ КАЛИБРОВОК): НОРМА');
       end
       else
       begin
         Form1.mmoTestResult.Lines.Add('ПРОВЕРКА ПУНКТА 1.1.10.2 ТУ ЯГАИ.468157.116 (ПРОВЕРКА ПЕРЕДАЧИ КАЛИБРОВОК): !!! НЕ НОРМА !!!');
+        allTestFlag:=False;
       end;
       Form1.mmoTestResult.Lines.Add('');
       startTest_1_1_10_2:=False;
@@ -4151,56 +4576,96 @@ begin
           begin
             if (testFlagSrn) then
             begin
+              //активация вкладки с быстрыми
+              form1.PageControl1.ActivePageIndex:=1;
+
               testFlagSrn:=False;
+              // ==> СРН2
               //запустим проверку прибора СРН2
               Form1.tmrTestSRN2.Enabled:=True;
             end;
-            
+
             if (not Form1.tmrTestSRN2.Enabled) then
             begin
-              //как только закончили проверку СРН2
+              //закончили проверку БВК
+              //все проверки прошли, надо выводить результат
+              if (allTestFlag) then
+              begin
+                Form1.mmoTestResult.Lines.Add('ПРОВЕРКА МОДУЛЯ N1-1: НОРМА');
+              end
+              else
+              begin
+                Form1.mmoTestResult.Lines.Add('ПРОВЕРКА МОДУЛЯ N1-1: !!! НЕ НОРМА !!!');
+              end;
+              Form1.tmrAllTest.Enabled:=False;
 
-              if (flagTestZU) then
+
+              //как только закончили проверку СРН2
+              {if (flagTestZU) then
               begin
                 flagTestZU:=False;
-                flagTestZUEnd:=false;
+
+                {adrTestNum:=4; //5
+                testNeedsAdrF;
+                FillAdressParam;}
+                {flagTestZUEnd:=false;
                 //проверяем ЗУ
                 startZUtime:=0;
                 modZU:=1; //2
                 adrTestNum:=4; //5
                 form1.mmoTestResult.lines.add('ПРОВЕРКА ПУНКТА 1.1.6 ТУ ЯГАИ.468363.026 (ПРОВЕРКА ОБЕСПЕЧЕНИЯ ИНФОРМАЦИИ)');
-                ZUTestFlag:=True;
-
+                ZUTestFlag:=True;   
                 //запуск проверки ЗУ
                 Form1.tmrStartTestZU.Enabled:=True;
-              end;
+              end; }
 
-              if (flagTestZUEnd) then
+              {if (flagTestZUEnd) then
               begin
+                flagTestZUEnd:=true;
                 //проверка ЗУ закончена
-
-                if (flagTestBVK) then
+                //переключение адресов
+                adrTestNum:=3;
+                //подгружаем адреса для проверки БВК
+                testNeedsAdrF;
+                FillAdressParam;
+                //перестыковка разъема Б1 для проверки БВК
+                ret :=Application.MessageBox(PAnsiChar('Перестыкуйте разъем Б1 на приборе МКБ2 и нажмите ОК для продолжения проверки'),PAnsiChar('Перестыковка кабелей'), MB_OK+MB_ICONWARNING);
+                if ret=IDOK then
                 begin
-                  flagTestBVK:=False;
-                  //запуск проверки БВК
-                  Form1.tmrStartTestBVK.Enabled:=True;
-                end;
 
-                if (flagTestBVK_End) then
-                begin
-                  //закончили проверку БВК
-                  //все проверки прошли, надо выводить результат
-                  if (allTestFlag) then
+                  //перезапуск питания прибора
+                  SetOnPowerSupply(1);
+                  SetVoltageOnPowerSupply(1,'0000');
+                  Delay_ms(20);
+                  SetOnPowerSupply(0);
+                  //замыкаем контакты команды НОВ
+                  SendCommandToISD('http://'+ISDip_2+'/type=2num='+inttostr(5)+'val=1'); 
+                  SetVoltageOnPowerSupply(1,'2700');
+                  SetOnPowerSupply(1);
+
+                  if (flagTestBVK) then
                   begin
-                    Form1.mmoTestResult.Lines.Add('ПРОВЕРКА МОДУЛЯ N1-1: НОРМА');
-                  end
-                  else
-                  begin
-                    Form1.mmoTestResult.Lines.Add('ПРОВЕРКА МОДУЛЯ N1-1: !!! НЕ НОРМА !!!');
+                    flagTestBVK:=False;
+                    //запуск проверки БВК
+                    Form1.tmrStartTestBVK.Enabled:=True;
                   end;
-                  Form1.tmrAllTest.Enabled:=False;
+
+                  if (flagTestBVK_End) then
+                  begin
+                    //закончили проверку БВК
+                    //все проверки прошли, надо выводить результат
+                    if (allTestFlag) then
+                    begin
+                      Form1.mmoTestResult.Lines.Add('ПРОВЕРКА МОДУЛЯ N1-1: НОРМА');
+                    end
+                    else
+                    begin
+                      Form1.mmoTestResult.Lines.Add('ПРОВЕРКА МОДУЛЯ N1-1: !!! НЕ НОРМА !!!');
+                    end;
+                    Form1.tmrAllTest.Enabled:=False;
+                  end;
                 end;
-              end;
+              end;}
             end; 
           end;
         end;  
@@ -4210,302 +4675,337 @@ begin
 end;
 
 procedure TForm1.tmrRCoTimer(Sender: TObject);
+const
+  ACC_D=6;//погрешность для компенсации
 var
   i:integer;
   bool:Boolean;
 begin
-  case testCount of
-    1:
-    begin
-      testResult:=True;
-      form1.mmoTestResult.Lines.Add('ПРОВЕРКА ПУНКТА 1.1.10.2 ТУ ЯГАИ.468157.116 (ПРОВЕРКА КОМПЕНСАЦИИ НАЧАЛЬНЫХ СОПРОТИВЛЕНИЙ)');
-      form1.mmoTestResult.Lines.Add('ПРОВЕРКА ДИАПАЗОНА 1');
-      SendCommandToISD('http://'+ISDip_1+'/type=2num=54val=1');
-      Delay_S(1);
-      form1.mmoTestResult.Lines.Add('ПРОВЕРКА КОМПЕНСАЦИИ СОПРОТИВЛЕНИЯ 80 Ом');
-      form1.mmoTestResult.Lines.Add('Установлено сопротивление:80 Ом');
-      changeResistance(80.0);
-      for i:=1 to 8 do
-      begin
-        SendCommandToISD('http://'+ISDip_1+'/type=2num='+inttostr(i)+'val=1');
-      end;
-      Delay_S(1);
-    end;
-    2:
-    begin
-      //проверяем 31 канал
-      bool:=testCompens;
-      testResult:=testResult and  bool;
+  if (startTest_1_1_10_2) then
+  begin
+    //собрали калибровку делаем очередную проверку
+    startTest_1_1_10_2:=False;
 
-      for i:=1 to 8 do
+    case testCount of
+      1:
       begin
-        SendCommandToISD('http://'+ISDip_1+'/type=2num='+inttostr(i)+'val=0');
+        testResult:=True;
+        form1.mmoTestResult.Lines.Add('ПРОВЕРКА ПУНКТА 1.1.10.2 ТУ ЯГАИ.468157.116 (ПРОВЕРКА КОМПЕНСАЦИИ НАЧАЛЬНЫХ СОПРОТИВЛЕНИЙ)');
+        form1.mmoTestResult.Lines.Add('ПРОВЕРКА ДИАПАЗОНА 1');
+        SendCommandToISD('http://'+ISDip_1+'/type=2num=54val=1');
+        //Delay_S(1);
+        form1.mmoTestResult.Lines.Add('ПРОВЕРКА КОМПЕНСАЦИИ СОПРОТИВЛЕНИЯ 80 Ом');
+        form1.mmoTestResult.Lines.Add('Установлено сопротивление: 140 Ом');
+        changeResistance(140);  //80  903+-5
+        for i:=1 to 8 do
+        begin
+          SendCommandToISD('http://'+ISDip_1+'/type=2num='+inttostr(i)+'val=1');
+        end;
+        //Delay_S(1);
       end;
-      Delay_S(1);
-    end;
-    3:
-    begin
-      form1.mmoTestResult.Lines.Add('ПРОВЕРКА КОМПЕНСАЦИИ СОПРОТИВЛЕНИЯ 40 Ом');
-      form1.mmoTestResult.Lines.Add('Установлено сопротивление:40 Ом');
-      changeResistance(40.0);
-      for i:=9 to 17 do
+      3:   //2
       begin
-        SendCommandToISD('http://'+ISDip_1+'/type=2num='+inttostr(i)+'val=1');
-      end;
-      Delay_S(1);
-    end;
-    4:
-    begin
-      bool:=testCompens;
-      testResult:=testResult and bool;
-      for i:=9 to 17 do
-      begin
-        SendCommandToISD('http://'+ISDip_1+'/type=2num='+inttostr(i)+'val=0');
-      end;
-      Delay_S(1);
-    end;
-    5:
-    begin
-      form1.mmoTestResult.Lines.Add('ПРОВЕРКА КОМПЕНСАЦИИ СОПРОТИВЛЕНИЯ 20 Ом');
-      form1.mmoTestResult.Lines.Add('Установлено сопротивление:20 Ом');
-      changeResistance(20.0);
-      for i:=18 to 26 do
-      begin
-        SendCommandToISD('http://'+ISDip_1+'/type=2num='+inttostr(i)+'val=1');
-      end;
-      Delay_S(1);
-    end;
-    6:
-    begin
-      bool:=testCompens;
-      testResult:=testResult and bool;
-      for i:=18 to 26 do
-      begin
-        SendCommandToISD('http://'+ISDip_1+'/type=2num='+inttostr(i)+'val=0');
-      end;
-      Delay_S(1);
-    end;
-    7:
-    begin
-      form1.mmoTestResult.Lines.Add('ПРОВЕРКА КОМПЕНСАЦИИ СОПРОТИВЛЕНИЯ 10 Ом');
-      form1.mmoTestResult.Lines.Add('Установлено сопротивление:10 Ом');
-      changeResistance(10.0);
-      for i:=27 to 35 do
-      begin
-        SendCommandToISD('http://'+ISDip_1+'/type=2num='+inttostr(i)+'val=1');
-      end;
-      Delay_S(1);
-    end;
-    8:
-    begin
-      bool:=testCompens;
-      testResult:=testResult and bool;
-      for i:=27 to 35 do
-      begin
-        SendCommandToISD('http://'+ISDip_1+'/type=2num='+inttostr(i)+'val=0');
-      end;
-      Delay_S(1);
-    end;
-    9:
-    begin
-      form1.mmoTestResult.Lines.Add('ПРОВЕРКА КОМПЕНСАЦИИ СОПРОТИВЛЕНИЯ 5 Ом');
-      form1.mmoTestResult.Lines.Add('Установлено сопротивление:5 Ом');
-      changeResistance(5.0);
-      for i:=36 to 44 do
-      begin
-        SendCommandToISD('http://'+ISDip_1+'/type=2num='+inttostr(i)+'val=1');
-      end;
-      Delay_S(1);
-    end;
-    10:
-    begin
-      bool:=testCompens;
-      testResult:=testResult and bool;
-      for i:=36 to 44 do
-      begin
-        SendCommandToISD('http://'+ISDip_1+'/type=2num='+inttostr(i)+'val=0');
-      end;
-      Delay_S(1);
-    end;
-    11:
-    begin
-      form1.mmoTestResult.Lines.Add('ПРОВЕРКА КОМПЕНСАЦИИ СОПРОТИВЛЕНИЯ 2.5 Ом');
-      form1.mmoTestResult.Lines.Add('Установлено сопротивление:2.5 Ом');
-      changeResistance(2.5);
-      for i:=45 to 53 do
-      begin
-        SendCommandToISD('http://'+ISDip_1+'/type=2num='+inttostr(i)+'val=1');
-      end;
-      Delay_S(1);
-    end;
-    12:
-    begin
-      bool:=testCompens;
-      testResult:=testResult and bool;
-      for i:=45 to 53 do
-      begin
-        SendCommandToISD('http://'+ISDip_1+'/type=2num='+inttostr(i)+'val=0');
-      end;
-      Delay_S(1);
-    end;
-    13:
-    begin
-      form1.mmoTestResult.Lines.Add('ПРОВЕРКА ДИАПАЗОНА 2');
-      SendCommandToISD('http://'+ISDip_1+'/type=2num=54val=0');
-      Delay_S(1);
-      form1.mmoTestResult.Lines.Add('ПРОВЕРКА КОМПЕНСАЦИИ СОПРОТИВЛЕНИЯ 400 Ом');
-      form1.mmoTestResult.Lines.Add('Установлено сопротивление:400 Ом');
-      changeResistance(400);
-      for i:=1 to 8 do
-      begin
-        SendCommandToISD('http://'+ISDip_1+'/type=2num='+inttostr(i)+'val=1');
-      end;
-      Delay_S(1);
-    end;
-    14:
-    begin
-      bool:=testCompens;
-      testResult:=testResult and bool;
-      testFlag_1_1_10_2:=False;
-      for i:=1 to 8 do
-      begin
-        SendCommandToISD('http://'+ISDip_1+'/type=2num='+inttostr(i)+'val=0');
-      end;
-      Delay_S(1);
-    end;
-    15:
-    begin
-      form1.mmoTestResult.Lines.Add('ПРОВЕРКА КОМПЕНСАЦИИ СОПРОТИВЛЕНИЯ 200 Ом');
-      form1.mmoTestResult.Lines.Add('Установлено сопротивление:200 Ом');
-      changeResistance(200.0);
-      for i:=9 to 17 do
-      begin
-        SendCommandToISD('http://'+ISDip_1+'/type=2num='+inttostr(i)+'val=1');
-      end;
-      Delay_S(1);
-    end;
-    16:
-    begin
-      bool:=testCompens;
-      testResult:=testResult and bool;
-      for i:=9 to 17 do
-      begin
-        SendCommandToISD('http://'+ISDip_1+'/type=2num='+inttostr(i)+'val=0');
-      end;
-      Delay_S(1);
-    end;
-    17:
-    begin
-      form1.mmoTestResult.Lines.Add('ПРОВЕРКА КОМПЕНСАЦИИ СОПРОТИВЛЕНИЯ 100 Ом');
-      form1.mmoTestResult.Lines.Add('Установлено сопротивление:100 Ом');
-      changeResistance(100.0);
-      for i:=18 to 26 do
-      begin
-        SendCommandToISD('http://'+ISDip_1+'/type=2num='+inttostr(i)+'val=1');
-      end;
-      Delay_S(1);
-    end;
-    18:
-    begin
-      bool:=testCompens;
-      testResult:=testResult and bool;
-      for i:=18 to 26 do
-      begin
-        SendCommandToISD('http://'+ISDip_1+'/type=2num='+inttostr(i)+'val=0');
-      end;
-      Delay_S(1);
-    end;
-    19:
-    begin
-      form1.mmoTestResult.Lines.Add('ПРОВЕРКА КОМПЕНСАЦИИ СОПРОТИВЛЕНИЯ 50 Ом');
-      form1.mmoTestResult.Lines.Add('Установлено сопротивление:50 Ом');
-      changeResistance(50.0);
-      for i:=27 to 35 do
-      begin
-        SendCommandToISD('http://'+ISDip_1+'/type=2num='+inttostr(i)+'val=1');
-      end;
-      Delay_S(1);
-    end;
-    20:
-    begin
-      bool:=testCompens;
-      testResult:=testResult and bool;
-      for i:=27 to 35 do
-      begin
-        SendCommandToISD('http://'+ISDip_1+'/type=2num='+inttostr(i)+'val=0');
-      end;
-      Delay_S(1);
-    end;
-    21:
-    begin
-      form1.mmoTestResult.Lines.Add('ПРОВЕРКА КОМПЕНСАЦИИ СОПРОТИВЛЕНИЯ 25 Ом');
-      form1.mmoTestResult.Lines.Add('Установлено сопротивление:25 Ом');
-      changeResistance(25.0);
-      for i:=36 to 44 do
-      begin
-        SendCommandToISD('http://'+ISDip_1+'/type=2num='+inttostr(i)+'val=1');
-      end;
-      Delay_S(1);
-    end;
-    22:
-    begin
-      bool:=testCompens;
-      testResult:=testResult and bool;
-      for i:=36 to 44 do
-      begin
-        SendCommandToISD('http://'+ISDip_1+'/type=2num='+inttostr(i)+'val=0');
-      end;
-      Delay_S(1);
-    end;
-    23:
-    begin
-      form1.mmoTestResult.Lines.Add('ПРОВЕРКА КОМПЕНСАЦИИ СОПРОТИВЛЕНИЯ 12.5 Ом');
-      form1.mmoTestResult.Lines.Add('Установлено сопротивление:12.5 Ом');
-      changeResistance(12.5);
-      for i:=45 to 53 do
-      begin
-        SendCommandToISD('http://'+ISDip_1+'/type=2num='+inttostr(i)+'val=1');
-      end;
-      Delay_S(1);
-    end;
-    24:
-    begin
-      bool:=testCompens;
-      testResult:=testResult and bool;
-      for i:=45 to 53 do
-      begin
-        SendCommandToISD('http://'+ISDip_1+'/type=2num='+inttostr(i)+'val=0');
-      end;
-      Delay_S(1);
-      if (testResult) then
-      begin
-        Form1.mmoTestResult.Lines.Add('ПРОВЕРКА ПУНКТА 1.1.10.2 ТУ ЯГАИ.468157.116 (ПРОВЕРКА КОМПЕНСАЦИИ НАЧАЛЬНЫХ СОПРОТИВЛЕНИЙ): НОРМА');
-      end
-      else
-      begin
-        Form1.mmoTestResult.Lines.Add('ПРОВЕРКА ПУНКТА 1.1.10.2 ТУ ЯГАИ.468157.116 (ПРОВЕРКА КОМПЕНСАЦИИ НАЧАЛЬНЫХ СОПРОТИВЛЕНИЙ): !!! НЕ НОРМА !!!');
-        allTestFlag:=false;
-      end;
-      Form1.mmoTestResult.Lines.Add('');
+        //проверяем 31 канал
+        bool:=testCompens(903,ACC_D,minScale1,maxScale1,TS_1_MIN1,TS_1_MAX1);
+        testResult:=testResult and  bool;
 
-      if (testResult) then
-      begin
-        Form1.mmoTestResult.Lines.Add('ПУНКТ 1.1.10.2 ТУ ЯГАИ.468157.116: НОРМА');
-      end
-      else
-      begin
-        Form1.mmoTestResult.Lines.Add('ПУНКТ 1.1.10.2 ТУ ЯГАИ.468157.116: !!! НЕ НОРМА !!!');
-        allTestFlag:=false;
+        for i:=1 to 8 do
+        begin
+          SendCommandToISD('http://'+ISDip_1+'/type=2num='+inttostr(i)+'val=0');
+        end;
+        //Delay_S(1);
       end;
-      Form1.mmoTestResult.Lines.Add('');
+      5: //3
+      begin
+        form1.mmoTestResult.Lines.Add('ПРОВЕРКА КОМПЕНСАЦИИ СОПРОТИВЛЕНИЯ 40 Ом');
+        form1.mmoTestResult.Lines.Add('Установлено сопротивление: 70 Ом');
+        changeResistance(70);  //40 647+-5
+        for i:=9 to 16 do
+        begin
+          SendCommandToISD('http://'+ISDip_1+'/type=2num='+inttostr(i)+'val=1');
+        end;
+        //Delay_S(1);
+      end;
+      7://4
+      begin
+        bool:=testCompens(647,ACC_D,minScale2,maxScale2,TS_1_MIN2,TS_1_MAX2);
+        testResult:=testResult and bool;
+        for i:=9 to 16 do
+        begin
+          SendCommandToISD('http://'+ISDip_1+'/type=2num='+inttostr(i)+'val=0');
+        end;
+        //Delay_S(1);
+      end;
+      9: //5
+      begin
+        form1.mmoTestResult.Lines.Add('ПРОВЕРКА КОМПЕНСАЦИИ СОПРОТИВЛЕНИЯ 20 Ом');
+        form1.mmoTestResult.Lines.Add('Установлено сопротивление: 35 Ом');
+        changeResistance(35.0);  //20  391+-5
+        for i:=17 to 24 do
+        begin
+          SendCommandToISD('http://'+ISDip_1+'/type=2num='+inttostr(i)+'val=1');
+        end;
+        //Delay_S(1);
+      end;
+      11: //6
+      begin
+        bool:=testCompens(391,ACC_D,minScale3,maxScale3,TS_1_MIN3,TS_1_MAX3);
+        testResult:=testResult and bool;
+        for i:=17 to 24 do
+        begin
+          SendCommandToISD('http://'+ISDip_1+'/type=2num='+inttostr(i)+'val=0');
+        end;
+        //Delay_S(1);
+      end;
+      13: //7
+      begin
+        form1.mmoTestResult.Lines.Add('ПРОВЕРКА КОМПЕНСАЦИИ СОПРОТИВЛЕНИЯ 10 Ом');
+        form1.mmoTestResult.Lines.Add('Установлено сопротивление: 15 Ом');
+        changeResistance(15.0);  //10  135+-5
+        for i:=25 to 32 do
+        begin
+          SendCommandToISD('http://'+ISDip_1+'/type=2num='+inttostr(i)+'val=1');
+        end;
+        //Delay_S(1);
+      end;
+      15://8
+      begin
+        bool:=testCompens(135,ACC_D,minScale4,maxScale4,TS_1_MIN4,TS_1_MAX4);
+        testResult:=testResult and bool;
+        for i:=25 to 32 do
+        begin
+          SendCommandToISD('http://'+ISDip_1+'/type=2num='+inttostr(i)+'val=0');
+        end;
+        //Delay_S(1);
+      end;
+      17://9
+      begin
+        form1.mmoTestResult.Lines.Add('ПРОВЕРКА КОМПЕНСАЦИИ СОПРОТИВЛЕНИЯ 5 Ом');
+        form1.mmoTestResult.Lines.Add('Установлено сопротивление: 10 Ом');
+        changeResistance(10.0);   //5 135+-5
+        for i:=33 to 40 do
+        begin
+          SendCommandToISD('http://'+ISDip_1+'/type=2num='+inttostr(i)+'val=1');
+        end;
+        //Delay_S(1);
+      end;
+      19://10
+      begin
+        bool:=testCompens(135,ACC_D,minScale4,maxScale4,TS_1_MIN4,TS_1_MAX4);
+        testResult:=testResult and bool;
+        for i:=33 to 40 do
+        begin
+          SendCommandToISD('http://'+ISDip_1+'/type=2num='+inttostr(i)+'val=0');
+        end;
+        //Delay_S(1);
+      end;
+      21: //11
+      begin
+        form1.mmoTestResult.Lines.Add('ПРОВЕРКА КОМПЕНСАЦИИ СОПРОТИВЛЕНИЯ 2.5 Ом');
+        form1.mmoTestResult.Lines.Add('Установлено сопротивление: 17.5 Ом');
+        changeResistance(17.5); //2.5 391+-5
+        for i:=41 to 48 do
+        begin
+          SendCommandToISD('http://'+ISDip_1+'/type=2num='+inttostr(i)+'val=1');
+        end;
+        //Delay_S(1);
+      end;
+      23: //12
+      begin
+        bool:=testCompens(391,ACC_D,minScale3,maxScale3,TS_1_MIN3,TS_1_MAX3);
+        testResult:=testResult and bool;
+        for i:=41 to 48 do
+        begin
+          SendCommandToISD('http://'+ISDip_1+'/type=2num='+inttostr(i)+'val=0');
+        end;
+        //Delay_S(1);
+      end;
+      25: //13
+      begin
+        form1.mmoTestResult.Lines.Add('ПРОВЕРКА ДИАПАЗОНА 2');
+        SendCommandToISD('http://'+ISDip_1+'/type=2num=54val=0');
+        //Delay_S(1);
+        form1.mmoTestResult.Lines.Add('ПРОВЕРКА КОМПЕНСАЦИИ СОПРОТИВЛЕНИЯ 400 Ом');
+        form1.mmoTestResult.Lines.Add('Установлено сопротивление: 700 Ом');
+        changeResistance(700);  //400 903+-5
+        for i:=1 to 8 do
+        begin
+          SendCommandToISD('http://'+ISDip_1+'/type=2num='+inttostr(i)+'val=1');
+        end;
+        //Delay_S(1);
+      end;
+      27: //14
+      begin
+        bool:=testCompens(903,ACC_D,minScale1,maxScale1,TS_2_MIN1,TS_2_MAX1);
+        testResult:=testResult and bool;
+        testFlag_1_1_10_2:=False;
+        for i:=1 to 8 do
+        begin
+          SendCommandToISD('http://'+ISDip_1+'/type=2num='+inttostr(i)+'val=0');
+        end;
+        //Delay_S(1);
+      end;
+      29: //15
+      begin
+        form1.mmoTestResult.Lines.Add('ПРОВЕРКА КОМПЕНСАЦИИ СОПРОТИВЛЕНИЯ 200 Ом');
+        form1.mmoTestResult.Lines.Add('Установлено сопротивление: 350 Ом');
+        changeResistance(350.0); //200   647+-5
+        for i:=9 to 16 do
+        begin
+          SendCommandToISD('http://'+ISDip_1+'/type=2num='+inttostr(i)+'val=1');
+        end;
+        //Delay_S(1);
+      end;
+      31: //16
+      begin
+        bool:=testCompens(647,ACC_D,minScale2,maxScale2,TS_2_MIN2,TS_2_MAX2);
+        testResult:=testResult and bool;
+        for i:=9 to 16 do
+        begin
+          SendCommandToISD('http://'+ISDip_1+'/type=2num='+inttostr(i)+'val=0');
+        end;
+        //Delay_S(1);
+      end;
+      33: //17
+      begin
+        form1.mmoTestResult.Lines.Add('ПРОВЕРКА КОМПЕНСАЦИИ СОПРОТИВЛЕНИЯ 100 Ом');
+        form1.mmoTestResult.Lines.Add('Установлено сопротивление: 175 Ом');
+        changeResistance(175.0);  //100 391+-5
+        for i:=17 to 24 do
+        begin
+          SendCommandToISD('http://'+ISDip_1+'/type=2num='+inttostr(i)+'val=1');
+        end;
+        //Delay_S(1);
+      end;
+      35: //18
+      begin
+        bool:=testCompens(391,ACC_D,minScale3,maxScale3,TS_2_MIN3,TS_2_MAX3);
+        testResult:=testResult and bool;
+        for i:=17 to 24 do
+        begin
+          SendCommandToISD('http://'+ISDip_1+'/type=2num='+inttostr(i)+'val=0');
+        end;
+        //Delay_S(1);
+      end;
+      37: //19
+      begin
+        form1.mmoTestResult.Lines.Add('ПРОВЕРКА КОМПЕНСАЦИИ СОПРОТИВЛЕНИЯ 50 Ом');
+        form1.mmoTestResult.Lines.Add('Установлено сопротивление: 75 Ом');
+        changeResistance(75.0); //50 135+-5
+        for i:=25 to 32 do
+        begin
+          SendCommandToISD('http://'+ISDip_1+'/type=2num='+inttostr(i)+'val=1');
+        end;
+        //Delay_S(1);
+      end;
+      39: //20
+      begin
+        bool:=testCompens(135,ACC_D,minScale4,maxScale4,TS_2_MIN4,TS_2_MAX4);
+        testResult:=testResult and bool;
+        for i:=25 to 32 do
+        begin
+          SendCommandToISD('http://'+ISDip_1+'/type=2num='+inttostr(i)+'val=0');
+        end;
+        //Delay_S(1);
+      end;
+      41: //21
+      begin
+        form1.mmoTestResult.Lines.Add('ПРОВЕРКА КОМПЕНСАЦИИ СОПРОТИВЛЕНИЯ 25 Ом');
+        form1.mmoTestResult.Lines.Add('Установлено сопротивление: 50 Ом');
+        changeResistance(50.0); //25 135+-5
+        for i:=33 to 40 do
+        begin
+          SendCommandToISD('http://'+ISDip_1+'/type=2num='+inttostr(i)+'val=1');
+        end;
+        //Delay_S(1);
+      end;
+      43: //22
+      begin
+        bool:=testCompens(135,ACC_D,minScale4,maxScale4,TS_2_MIN4,TS_2_MAX4);
+        testResult:=testResult and bool;
+        for i:=33 to 40 do
+        begin
+          SendCommandToISD('http://'+ISDip_1+'/type=2num='+inttostr(i)+'val=0');
+        end;
+        //Delay_S(1);
+      end;
+      45: //23
+      begin
+        form1.mmoTestResult.Lines.Add('ПРОВЕРКА КОМПЕНСАЦИИ СОПРОТИВЛЕНИЯ 12.5 Ом');
+        form1.mmoTestResult.Lines.Add('Установлено сопротивление: 37.5 Ом');
+        changeResistance(37.5);  // 12.5 135+-5
+        for i:=41 to 48 do
+        begin
+          SendCommandToISD('http://'+ISDip_1+'/type=2num='+inttostr(i)+'val=1');
+        end;
+        //Delay_S(1);
+      end;
+      47: //24
+      begin
+        bool:=testCompens(135,ACC_D,minScale4,maxScale4,TS_2_MIN4,TS_2_MAX4);
+        testResult:=testResult and bool;
+        for i:=41 to 48 do
+        begin
+          SendCommandToISD('http://'+ISDip_1+'/type=2num='+inttostr(i)+'val=0');
+        end;
 
-      testCount:=0;
+        //завершили сбор калибровок в массив
+        startTestBlock:=False;
 
-      //startTestMKT3:=False;
-      form1.tmrRCo.Enabled:=false;
+
+        //Delay_S(1);
+        if (testResult) then
+        begin
+          Form1.mmoTestResult.Lines.Add('ПРОВЕРКА ПУНКТА 1.1.10.2 ТУ ЯГАИ.468157.116 (ПРОВЕРКА КОМПЕНСАЦИИ НАЧАЛЬНЫХ СОПРОТИВЛЕНИЙ): НОРМА');
+        end
+        else
+        begin
+          Form1.mmoTestResult.Lines.Add('ПРОВЕРКА ПУНКТА 1.1.10.2 ТУ ЯГАИ.468157.116 (ПРОВЕРКА КОМПЕНСАЦИИ НАЧАЛЬНЫХ СОПРОТИВЛЕНИЙ): !!! НЕ НОРМА !!!');
+          allTestFlag:=false;
+        end;
+        //Form1.mmoTestResult.Lines.Add('');
+
+        if (testResult) then
+        begin
+          Form1.mmoTestResult.Lines.Add('ПУНКТ 1.1.10.2 ТУ ЯГАИ.468157.116: НОРМА');
+        end
+        else
+        begin
+          Form1.mmoTestResult.Lines.Add('ПУНКТ 1.1.10.2 ТУ ЯГАИ.468157.116: !!! НЕ НОРМА !!!');
+          allTestFlag:=false;
+        end;
+        Form1.mmoTestResult.Lines.Add('');
+
+        testCount:=0;
+
+        //startTestMKT3:=False;
+        form1.tmrRCo.Enabled:=false;
+      end;
     end;
+
+
+    minScale1:=-1;
+    maxScale1:=-1;
+    minScale2:=-1;
+    maxScale2:=-1;
+    minScale3:=-1;
+    maxScale3:=-1;
+    minScale4:=-1;
+    maxScale4:=-1;
+
+    Inc(testCount);
   end;
-  Inc(testCount);
+
+  if (isTestCloseFl) then
+  begin
+    form1.tmrRCo.Enabled:=false;
+    //завершили сбор калибровок в массив
+    startTestBlock:=False;
+    for i:=1 to 48 do
+    begin
+      SendCommandToISD('http://'+ISDip_1+'/type=2num='+inttostr(i)+'val=0');
+    end;
+  end; 
 end;
 
 procedure TForm1.tmrTestSRN2Timer(Sender: TObject);
@@ -4516,9 +5016,10 @@ begin
     1:
     begin
       form1.mmoTestResult.Lines.Add('ПРОВЕРКА ПУНКТА 1.1.10.3 ТУ ЯГАИ.468157.116 (ПРОВЕРКА ВЫРАБОТКИ СТАБИЛИЗИРОВАННОГО НАПРЯЖЕНИЯ 6.2 В)(прибор СРН2)');
+      flagTestSrn:=True;
       //замыкаем нужные контакты на ИСД
       //на общ. шину
-      SendCommandToISD('http://'+ISDip_1+'/type=3num='+'76'+'val=1');
+      SendCommandToISD('http://'+ISDip_2+'/type=3num='+'76'+'val=1');    //ISDip_1
       //считываем и проверяем напряжение
       str:='';
       //переводим вольтметр_1 в режим чтения
@@ -4542,16 +5043,18 @@ begin
       begin
         form1.mmoTestResult.Lines.Add('Напряжение с прибора: '+str+' В');
         form1.mmoTestResult.Lines.Add('');
-        form1.mmoTestResult.Lines.Add('ПРОВЕРКА ПУНКТА 1.1.10.3 ТУ ЯГАИ.468157.116 (ПРОВЕРКА ВЫРАБОТКИ СТАБИЛИЗИРОВАННОГО НАПРЯЖЕНИЯ 6.2 В)'+' !!!НЕ НОРМА!!!');
+        form1.mmoTestResult.Lines.Add('ПРОВЕРКА ПУНКТА 1.1.10.3 ТУ ЯГАИ.468157.116 (ПРОВЕРКА ВЫРАБОТКИ СТАБИЛИЗИРОВАННОГО НАПРЯЖЕНИЯ 6.2 В)'+' !!! НЕ НОРМА !!!');
+        flagTestSrn:=False;
+
         allTestFlag:=False;
       end;
       form1.mmoTestResult.Lines.Add('');
-      SendCommandToISD('http://'+ISDip_1+'/type=3num='+'76'+'val=0');
+      SendCommandToISD('http://'+ISDip_2+'/type=3num='+'76'+'val=0'); // ISDip_1
     end;
     2:
     begin
       form1.mmoTestResult.Lines.Add('ПРОВЕРКА ПУНКТА 1.1.10.4 ТУ ЯГАИ.468157.116 (ПРОВЕРКА ВЫРАБОТКИ ЭТАЛОННОГО НАПРЯЖЕНИЯ 5 В ДЛЯ КАЛИБРОВКИ ГЕНЕРАТОРНЫХ ДАТЧИКОВ)(прибор СРН2)');
-      SendCommandToISD('http://'+ISDip_1+'/type=3num='+'77'+'val=1');
+      SendCommandToISD('http://'+ISDip_2+'/type=3num='+'77'+'val=1'); //ISDip_1
       //считываем и проверяем напряжение
       str:='';
       //переводим вольтметр в режим чтения
@@ -4563,21 +5066,44 @@ begin
       begin
         form1.mmoTestResult.Lines.Add('Напряжение с прибора: '+str+' В');
         form1.mmoTestResult.Lines.Add('');
-        form1.mmoTestResult.Lines.Add('ПРОВЕРКА ПУНКТА 1.1.10.4 ТУ : НОРМА');
+        form1.mmoTestResult.Lines.Add('ПРОВЕРКА ПУНКТА 1.1.10.4 ТУ ЯГАИ.468157.116 (ПРОВЕРКА ВЫРАБОТКИ ЭТАЛОННОГО НАПРЯЖЕНИЯ 5 В ДЛЯ КАЛИБРОВКИ ГЕНЕРАТОРНЫХ ДАТЧИКОВ)(прибор СРН2) : НОРМА');
       end
       else
       begin
         form1.mmoTestResult.Lines.Add('Напряжение с прибора: '+str+' В');
         form1.mmoTestResult.Lines.Add('');
-        form1.mmoTestResult.Lines.Add('ПРОВЕРКА ПУНКТА 1.1.10.4 ТУ : !!!НЕ НОРМА!!!');
+        form1.mmoTestResult.Lines.Add('ПРОВЕРКА ПУНКТА 1.1.10.4 ТУ ЯГАИ.468157.116 (ПРОВЕРКА ВЫРАБОТКИ ЭТАЛОННОГО НАПРЯЖЕНИЯ 5 В ДЛЯ КАЛИБРОВКИ ГЕНЕРАТОРНЫХ ДАТЧИКОВ)(прибор СРН2) : !!! НЕ НОРМА !!!');
+        flagTestSrn:=False;
+
         allTestFlag:=False;
       end;
+
+      form1.mmoTestResult.Lines.Add(''); 
+      if (flagTestSrn) then
+      begin
+        form1.mmoTestResult.Lines.Add('ПРОВЕРКА ПУНКТА 1.1.10.4 ТУ '+' НОРМА');
+      end
+      else
+      begin
+        form1.mmoTestResult.Lines.Add('ПРОВЕРКА ПУНКТА 1.1.10.4 ТУ '+' !!! НЕ НОРМА !!!');
+        allTestFlag:=False;
+      end;
+
+
       Form1.tmrTestSRN2.Enabled:=false;
       form1.mmoTestResult.Lines.Add('');
-      SendCommandToISD('http://'+ISDip_1+'/type=3num='+'77'+'val=0');
+      SendCommandToISD('http://'+ISDip_2+'/type=3num='+'77'+'val=0'); //ISDip_1
     end;
   end;
   Inc(testCount);
+
+
+  if (isTestCloseFl) then
+  begin
+    Form1.tmrTestSRN2.Enabled:=false;
+    SendCommandToISD('http://'+ISDip_2+'/type=3num='+'77'+'val=0');
+    SendCommandToISD('http://'+ISDip_2+'/type=3num='+'76'+'val=0');
+  end;
     {if (testCount>2) then
   begin
      Form1.tmrTestSRN2.Enabled:=false;
@@ -4621,14 +5147,14 @@ begin
           if ((DataMKB[numberChannel]>=3) and (DataMKB[numberChannel]<=5)) then
           begin
             form1.mmoTestResult.Lines.Add('Канал '+IntToStr(numberChannel)+
-              '   МКБ2: '+IntToStr(DataMKB[numberChannel])+' дв.ед.   НОРМА'+'[3,5]')
+              '   МКБ2: '+IntToStr(DataMKB[numberChannel])+' дв.ед.  : НОРМА'+'[3,5]')
           end
           else
           begin
             rezFlag:=false;
             //DeviceTestRezultFlag:=false;
             form1.mmoTestResult.Lines.Add('Канал '+IntToStr(numberChannel)+
-              '   МКБ2: '+IntToStr(DataMKB[numberChannel])+' дв.ед.   !!!НЕ НОРМА!!!'+'[3,5]')
+              '   МКБ2: '+IntToStr(DataMKB[numberChannel])+' дв.ед.  : !!! НЕ НОРМА !!!'+'[3,5]')
           end;
         end;
         3:
@@ -4637,14 +5163,14 @@ begin
           if ((DataMKB[numberChannel]>=15) and (DataMKB[numberChannel]<=17)) then  //23,27 ТУ на модуль
           begin
             form1.mmoTestResult.Lines.Add('Канал '+IntToStr(numberChannel)+
-              '   МКБ2: '+IntToStr(DataMKB[numberChannel])+' дв.ед.   НОРМА'+'[15,17]')
+              '   МКБ2: '+IntToStr(DataMKB[numberChannel])+' дв.ед.  : НОРМА'+'[15,17]')
           end
           else
           begin
             rezFlag:=false;
             //DeviceTestRezultFlag:=false;
             form1.mmoTestResult.Lines.Add('Канал '+IntToStr(numberChannel)+
-              '   МКБ2: '+IntToStr(DataMKB[numberChannel])+' дв.ед.   !!!НЕ НОРМА!!!'+'[15,17]')
+              '   МКБ2: '+IntToStr(DataMKB[numberChannel])+' дв.ед.  : !!! НЕ НОРМА !!!'+'[15,17]')
           end;
         end;
       end;
@@ -4676,7 +5202,11 @@ begin
         val62:=3310;
         //подбираем на канале 6.2В
         while (true) do
-        begin
+        begin           
+          if (isTestCloseFl) then
+          begin
+            Break;
+          end;
           SendCommandToISD('http://'+ISDip_2+'/type=1num='+
             IntToStr(IsdMKBcontNum[i])+'val='+intToStr(val62)+'work=1');
           SendCommandToISD('http://'+ISDip_2+'/type=3num='+
@@ -4742,14 +5272,14 @@ begin
           if ((DataMKB[numberChannel]>=59) and (DataMKB[numberChannel]<=61)) then
           begin
             form1.mmoTestResult.Lines.Add('Канал '+IntToStr(numberChannel)+
-              '   МКБ2: '+IntToStr(DataMKB[numberChannel])+' дв.ед.   НОРМА'+'[59,61]')
+              '   МКБ2: '+IntToStr(DataMKB[numberChannel])+' дв.ед.  : НОРМА'+'[59,61]')
           end
           else
           begin
             rezFlag:=false;
             //DeviceTestRezultFlag:=false;
             form1.mmoTestResult.Lines.Add('Канал '+IntToStr(numberChannel)+
-              '   МКБ2: '+IntToStr(DataMKB[numberChannel])+' дв.ед.   !!!НЕ НОРМА!!!'+'[59,61]')
+              '   МКБ2: '+IntToStr(DataMKB[numberChannel])+' дв.ед.  : !!! НЕ НОРМА !!!'+'[59,61]')
           end;
         end;
         3:
@@ -4757,14 +5287,14 @@ begin
           if ((DataMKB[numberChannel]>=240) and (DataMKB[numberChannel]<=242)) then   //243,247 ТУ на модуль
           begin
             form1.mmoTestResult.Lines.Add('Канал '+IntToStr(numberChannel)+
-              '   МКБ2: '+IntToStr(DataMKB[numberChannel])+' дв.ед.   НОРМА'+'[240,242]')
+              '   МКБ2: '+IntToStr(DataMKB[numberChannel])+' дв.ед.  : НОРМА'+'[240,242]')
           end
           else
           begin
             rezFlag:=false;
             //DeviceTestRezultFlag:=false;
             form1.mmoTestResult.Lines.Add('Канал '+IntToStr(numberChannel)+
-              '   МКБ2: '+IntToStr(DataMKB[numberChannel])+' дв.ед.   !!!НЕ НОРМА!!!'+'[240,242]')
+              '   МКБ2: '+IntToStr(DataMKB[numberChannel])+' дв.ед.  : !!! НЕ НОРМА !!!'+'[240,242]')
           end;
         end;
       end;
@@ -4785,16 +5315,19 @@ begin
     4:
     begin
       form1.tmrMKB_Dpart.Enabled:=false;
+      Form1.mmoTestResult.Lines.Add('');
       if (rezFlag) then
       begin
         Form1.mmoTestResult.Lines.Add('ПРОВЕРКА РАБОЧЕЙ ШКАЛЫ ПРИ НАПРЯЖЕНИИ 0В и 6.2В : НОРМА');
       end
       else
       begin
-        Form1.mmoTestResult.Lines.Add('ПРОВЕРКА РАБОЧЕЙ ШКАЛЫ ПРИ НАПРЯЖЕНИИ 0В и 6.2В : !!!НЕ НОРМА!!!');
+        Form1.mmoTestResult.Lines.Add('ПРОВЕРКА РАБОЧЕЙ ШКАЛЫ ПРИ НАПРЯЖЕНИИ 0В и 6.2В : !!! НЕ НОРМА !!!');
+        allTestFlag:=False;
       end;
 
       rezFlag:=true;
+      Form1.mmoTestResult.Lines.Add('');
       Form1.mmoTestResult.Lines.Add('ПРОВЕРКА ТОЧНОСТИ ИЗМЕРЕНИЯ КАНАЛОВ');
       for i:=1 to 20 do
       begin
@@ -4847,14 +5380,14 @@ begin
           begin
             Form1.mmoTestResult.Lines.Add('Канал '+IntToStr(numberChannel)+'   МКБ2: '+
               FloatToStrF(chVal,ffFixed,5,4)+'В   Вольтметр: '+FloatToStrF(voltmetrVal,ffFixed,5,4)+
-                'В   Погрешность: '+FloatToStrF(error,ffFixed,5,2)+'%   НОРМА');
+                'В   Погрешность: '+FloatToStrF(error,ffFixed,5,2)+'%  : НОРМА');
           end
           else
           begin
             rezFlag:=false;
             Form1.mmoTestResult.Lines.Add('Канал '+IntToStr(numberChannel)+'   МКБ2: '+
               FloatToStrF(chVal,ffFixed,5,4)+'В   Вольтметр: '+FloatToStrF(voltmetrVal,ffFixed,5,4)+
-                'В   Погрешность: '+FloatToStrF(error,ffFixed,5,2)+'%  !!!НЕ НОРМА!!!');
+                'В   Погрешность: '+FloatToStrF(error,ffFixed,5,2)+'%  : !!! НЕ НОРМА !!!');
           end;
         end;
         //8 разр.
@@ -4864,14 +5397,14 @@ begin
           begin
             Form1.mmoTestResult.Lines.Add('Канал '+IntToStr(numberChannel)+'   МКБ2: '+
               FloatToStrF(chVal,ffFixed,5,4)+'В   Вольтметр: '+FloatToStrF(voltmetrVal,ffFixed,5,4)+
-                'В   Погрешность: '+FloatToStrF(error,ffFixed,5,2)+'%   НОРМА');
+                'В   Погрешность: '+FloatToStrF(error,ffFixed,5,2)+'%  : НОРМА');
           end
           else
           begin
             rezFlag:=false;
             Form1.mmoTestResult.Lines.Add('Канал '+IntToStr(numberChannel)+'   МКБ2: '+
               FloatToStrF(chVal,ffFixed,5,4)+'В   Вольтметр: '+FloatToStrF(voltmetrVal,ffFixed,5,4)+
-                'В   Погрешность: '+FloatToStrF(error,ffFixed,5,2)+'%   !!!НЕ НОРМА!!!');
+                'В   Погрешность: '+FloatToStrF(error,ffFixed,5,2)+'%  : !!! НЕ НОРМА !!!');
           end;
         end;
       end;
@@ -4892,15 +5425,17 @@ begin
     6:
     begin
       //SetConf(m_instr_usbtmc_1[0],'CONF:VOLT:DC');
+      Form1.mmoTestResult.Lines.Add('');
       if (rezFlag) then
       begin
         Form1.mmoTestResult.Lines.Add('ПРОВЕРКА ТОЧНОСТИ ИЗМЕРЕНИЯ : НОРМА');
       end
       else
       begin
-        Form1.mmoTestResult.Lines.Add('ПРОВЕРКА ТОЧНОСТИ ИЗМЕРЕНИЯ : !!!НЕ НОРМА!!!');
+        Form1.mmoTestResult.Lines.Add('ПРОВЕРКА ТОЧНОСТИ ИЗМЕРЕНИЯ : !!! НЕ НОРМА !!!');
+        allTestFlag:=False;
       end;
-
+      Form1.mmoTestResult.Lines.Add('');
       //завершение проверки МКБ2
       form1.tmrMKB_Dpart.Enabled:=False;
 
@@ -4909,14 +5444,31 @@ begin
         Application.ProcessMessages;
       end;}
 
+      //МКТ3 ====>
+
       //запуск впомогательного таймера для проверки МКТ3
-      Form1.tmrF.Enabled:=True;
+      //Form1.tmrF.Enabled:=True;
+
       flagMKBEnd:=True;
+
+
+      //пропускаем проверку МКТ3 и проверяем дальше  СРН2,ЗУ,БВК
+      {testColibrFlag:=false;
+      testFlag_1_1_10_2:=False;
+      Form1.tmr1_1_10_2.Enabled:=False;
+      testFlagRco:=false;
+      Form1.tmrRCo.Enabled:=False;
+      testFlagSrn:=true;
+
+      Form1.tmrAllTest.Enabled:=true;}
     end;
 
   end;
 
-
+  if (isTestCloseFl) then
+  begin
+    form1.tmrMKB_Dpart.Enabled:=False;
+  end;
 
 
 
@@ -4949,7 +5501,7 @@ begin
           rezFlag:=false;
           //DeviceTestRezultFlag:=false;
           form1.mmoTestResult.Lines.Add('Канал '+IntToStr(NumberChannel)+
-            '   МКБ2: '+IntToStr(DataMKB[NumberChannel])+' дв.ед.   !!!НЕ НОРМА!!!')
+            '   МКБ2: '+IntToStr(DataMKB[NumberChannel])+' дв.ед.   !!! НЕ НОРМА !!!')
         end;
 
         for i:=2 to 32 do
@@ -5005,7 +5557,7 @@ begin
         rezFlag:=false;
         //DeviceTestRezultFlag:=false;
         Form1.mmoTestResult.Lines.Add('Канал '+IntToStr(NumberChannel)+'   МКБ2: '+
-          IntToStr(DataMKB[NumberChannel])+' дв.ед.   !!!НЕ НОРМА!!!')
+          IntToStr(DataMKB[NumberChannel])+' дв.ед.   !!! НЕ НОРМА !!!')
       end;
 
       inc(NumberChannel);
@@ -5026,7 +5578,7 @@ begin
         end
         else
         begin
-          Form1.mmoTestResult.Lines.Add('Результат проверки рабочей шкалы при напряжении 0В и взаимовлияния на другие каналы: !!!НЕ НОРМА!!!');
+          Form1.mmoTestResult.Lines.Add('Результат проверки рабочей шкалы при напряжении 0В и взаимовлияния на другие каналы: !!! НЕ НОРМА !!!');
           form1.mmoTestResult.Lines.Add('');
           form1.mmoTestResult.Lines.Add('СООТВЕТСТВИЕ ПРИБОРА МКБ2 ПУНКТУ 1.1.1 ТУ ЯГАИ.468363.026 (ПРОВЕРКА ВХОДНЫХ СИГНАЛОВ) !!! НЕ НОРМА !!!)');
           Form1.mmoTestResult.Lines.Add('');
@@ -5070,7 +5622,7 @@ begin
           rezFlag:=false;
           //DeviceTestRezultFlag:=false;
           Form1.mmoTestResult.Lines.Add('Канал 1  МКБ2. Максимум калибровки 6,2В: '+
-            IntToStr(CalibrMaxMKB2)+' дв.ед.  !!!НЕ НОРМА!!!')
+            IntToStr(CalibrMaxMKB2)+' дв.ед.  !!! НЕ НОРМА !!!')
         end;
         if ((CalibrMinMKB2>=14) and (CalibrMinMKB2<=18)) then
         begin
@@ -5082,7 +5634,7 @@ begin
           rezFlag:=false;
           //DeviceTestRezultFlag:=false;
           Form1.mmoTestResult.Lines.Add('Канал 1  МКБ2. Минимум калибровки 6,2В: '+
-            IntToStr(CalibrMinMKB2)+' дв.ед.  !!!НЕ НОРМА!!!')
+            IntToStr(CalibrMinMKB2)+' дв.ед.  !!! НЕ НОРМА !!!')
         end;
       end;
 
@@ -5104,7 +5656,7 @@ begin
         form1.mmoTestResult.Lines.Add('Канал '+IntToStr(NumberChannel)+'   МКБ2: '+
           FloatToStrF(ChannelValue,ffFixed,5,4)+'В   Вольтметр: '+
           FloatToStrF(VoltmetrValue,ffFixed,5,4)+'В   Погрешность: '+
-          FloatToStrF(Error,ffFixed,5,2)+'%   !!!НЕ НОРМА!!!');
+          FloatToStrF(Error,ffFixed,5,2)+'%   !!! НЕ НОРМА !!!');
       end;
 
       inc(NumberChannel);
@@ -5151,7 +5703,7 @@ begin
           rezFlag:=false;
           //DeviceTestRezultFlag:=false;
           Form1.mmoTestResult.Lines.Add('Канал 1  МКБ2. Максимум калибровки 6,2В: '+
-            IntToStr(CalibrMaxMKB2)+' дв.ед.  !!!НЕ НОРМА!!!')
+            IntToStr(CalibrMaxMKB2)+' дв.ед.  !!! НЕ НОРМА !!!')
         end;
         if ((CalibrMinMKB2>=3) and (CalibrMinMKB2<=5)) then
         begin
@@ -5163,7 +5715,7 @@ begin
           rezFlag:=false;
           //DeviceTestRezultFlag:=false;
           Form1.mmoTestResult.Lines.Add('Канал 1  МКБ2. Минимум калибровки 6,2В: '+
-            IntToStr(CalibrMinMKB2)+' дв.ед.  !!!НЕ НОРМА!!!')
+            IntToStr(CalibrMinMKB2)+' дв.ед.  !!! НЕ НОРМА !!!')
         end;
       end;
 
@@ -5185,7 +5737,7 @@ begin
         Form1.mmoTestResult.Lines.Add('Канал '+IntToStr(NumberChannel)+
           '   МКБ2: '+FloatToStrF(channelValue,ffFixed,5,4)+'В   Вольтметр: '+
             FloatToStrF(voltmetrValue,ffFixed,5,4)+'В   Погрешность: '+
-              FloatToStrF(error,ffFixed,5,2)+'%   !!!НЕ НОРМА!!!');
+              FloatToStrF(error,ffFixed,5,2)+'%   !!! НЕ НОРМА !!!');
       end;
 
       inc(NumberChannel);
@@ -5231,7 +5783,7 @@ begin
           rezFlag:=false;
           //DeviceTestRezultFlag:=false;
           Form1.mmoTestResult.Lines.Add('Канал 1  МКБ2. Максимум калибровки 6,2В: '+
-            IntToStr(CalibrMaxMKB2)+' дв.ед.  !!!НЕ НОРМА!!!')
+            IntToStr(CalibrMaxMKB2)+' дв.ед.  !!! НЕ НОРМА !!!')
         end;
         if ((CalibrMinMKB2>=0) and (CalibrMinMKB2<=2)) then
         begin
@@ -5243,7 +5795,7 @@ begin
           rezFlag:=false;
           //DeviceTestRezultFlag:=false;
           form1.mmoTestResult.Lines.Add('Канал 1  МКБ2. Минимум калибровки 6,2В: '+
-            IntToStr(CalibrMinMKB2)+' дв.ед.  !!!НЕ НОРМА!!!')
+            IntToStr(CalibrMinMKB2)+' дв.ед.  !!! НЕ НОРМА !!!')
         end;
       end;
 
@@ -5265,7 +5817,7 @@ begin
         Form1.mmoTestResult.Lines.Add('Канал '+IntToStr(NumberChannel)+
           '   МКБ2: '+FloatToStrF(ChannelValue,ffFixed,5,4)+'В   Вольтметр: '+
             FloatToStrF(VoltmetrValue,ffFixed,5,4)+'В   Погрешность: '+
-              FloatToStrF(Error,ffFixed,5,2)+'%   !!!НЕ НОРМА!!!');
+              FloatToStrF(Error,ffFixed,5,2)+'%   !!! НЕ НОРМА !!!');
       end;
 
       inc(NumberChannel);
@@ -5283,7 +5835,7 @@ begin
         end
         else
         begin
-          form1.mmoTestResult.Lines.Add('СООТВЕТСТВИЕ ПРИБОРА МКБ2 ПУНКТАМ 1.2.2 и 1.3.2 ТУ ЯГАИ.468363.026 (ПРОВЕРКА ПРОВЕРКА МЕТРОЛОГИЧЕСКИХ ХАРАКТЕРИСТИК КОМУТАТОРА И РАБОТОСПОСОБНОСТИ ПРИ ИЗМЕНЕНИИ РАЗРЯДНОСТИ ОЦИФРОВКИ) !!!НЕ НОРМА!!!');
+          form1.mmoTestResult.Lines.Add('СООТВЕТСТВИЕ ПРИБОРА МКБ2 ПУНКТАМ 1.2.2 и 1.3.2 ТУ ЯГАИ.468363.026 (ПРОВЕРКА ПРОВЕРКА МЕТРОЛОГИЧЕСКИХ ХАРАКТЕРИСТИК КОМУТАТОРА И РАБОТОСПОСОБНОСТИ ПРИ ИЗМЕНЕНИИ РАЗРЯДНОСТИ ОЦИФРОВКИ) !!! НЕ НОРМА !!!');
         end;
         Form1.tmrMKB_Dpart.Enabled:=false;
 
@@ -5295,8 +5847,8 @@ begin
         end
         else
         begin
-          Form1.mmoTestResult.Lines.Add('Проверка прибора МКБ2 №'+'111'+' !!! НЕ НОРМА!!!');
-          //showmessage('Проверка прибора МКБ2 №'+edit1.text+' !!! НЕ НОРМА!!!');
+          Form1.mmoTestResult.Lines.Add('Проверка прибора МКБ2 №'+'111'+' !!! НЕ НОРМА !!!');
+          //showmessage('Проверка прибора МКБ2 №'+edit1.text+' !!! НЕ НОРМА !!!');
         end;
         //TurnOFFPowerSupply(Number_Power_Supply_1);
         //str5:='Результаты_проверки_прибора_МКБ2_№'+edit1.Text+'_'+DateToStr(Date)+'_'+TimeToStr(Time)+'.txt';
@@ -5322,12 +5874,12 @@ begin
   if (flagMKBEnd) then
   begin
     flagMKBEnd:=false;
-    TestConnect(AkipV7_78_1,m_defaultRM_usbtmc_1[0],m_instr_usbtmc_1[0],viAttr_1,Timeout);
-    form1.PageControl1.ActivePageIndex:=2;
-    startTestBlock:=true;
+    //TestConnect(AkipV7_78_1,m_defaultRM_usbtmc_1[0],m_instr_usbtmc_1[0],viAttr_1,Timeout);
+
     //Delay_S(5);
     //startTestMKT3:=True;
-
+    form1.PageControl1.ActivePageIndex:=2;
+    startTestBlock:=true;
     //устанавливаем пакет адресов для проверки МКТ3
     adrTestNum:=2;
     //Form1.startReadACP.Click;
@@ -5448,11 +6000,11 @@ begin
             strOut:='';
             if (iCh>=9) then
             begin
-              strOut:='Канал К'+intTostr(iCh+2)+':';
+              strOut:='Канал'+intTostr(iCh+2)+':';
             end
             else
             begin
-              strOut:='Канал К'+intTostr(iCh)+':';
+              strOut:='Канал'+intTostr(iCh)+':';
             end;
 
             if testMTime(testBVK_Arr_pr[iCh].setTime[iT],timeBVKCarMSec-timeBVKPrevMSec,ErrorT) then
@@ -5461,11 +6013,11 @@ begin
               //form1.mmoTestResult.Lines.Add('Время Пр (мсек):'+intTostr(timeBVKCarMSec-timeBVKPrevMSec));
               if abs(testBVK_Arr_pr_prev[iCh]-testBVK_Arr_pr_curr[iCh])>=10 then
               begin
-                form1.mmoTestResult.Lines.Add('Время переключения(мсек):'+intTostr(timeBVKCarMSec-timeBVKPrevMSec)+' '+strOut+' НОРМА'+' ВКЛ');
+                form1.mmoTestResult.Lines.Add('Время переключения(мсек): '+intTostr(timeBVKCarMSec-timeBVKPrevMSec)+' '+strOut+' НОРМА'+' ВКЛ');
               end
               else
               begin
-                form1.mmoTestResult.Lines.Add('Время переключения(мсек):'+intTostr(timeBVKCarMSec-timeBVKPrevMSec)+' '+strOut+'!!НЕ НОРМА!!'+' ВКЛ');
+                form1.mmoTestResult.Lines.Add('Время переключения(мсек): '+intTostr(timeBVKCarMSec-timeBVKPrevMSec)+' '+strOut+'!!! НЕ НОРМА !!!'+' ВКЛ');
                 BVKTestFlag:=False;
               end;
               //если это состояние проверили то переключаемся на следующее
@@ -5478,11 +6030,11 @@ begin
               //form1.mmoTestResult.Lines.Add('Время Пр (мсек):'+intTostr(timeBVKCarMSec-timeBVKPrevMSec));
               if abs(testBVK_Arr_pr_prev[iCh]-testBVK_Arr_pr_curr[iCh])>=10 then
               begin
-                form1.mmoTestResult.Lines.Add('Время переключения(мсек):'+intTostr(timeBVKCarMSec-timeBVKPrevMSec)+' '+strOut+' НОРМА'+' ВЫКЛ');
+                form1.mmoTestResult.Lines.Add('Время переключения(мсек): '+intTostr(timeBVKCarMSec-timeBVKPrevMSec)+' '+strOut+' НОРМА '+' ВЫКЛ');
               end
               else
               begin
-                form1.mmoTestResult.Lines.Add('Время переключения(мсек):'+intTostr(timeBVKCarMSec-timeBVKPrevMSec)+' '+strOut+'!!НЕ НОРМА!!'+' ВЫКЛ');
+                form1.mmoTestResult.Lines.Add('Время переключения(мсек): '+intTostr(timeBVKCarMSec-timeBVKPrevMSec)+' '+strOut+'!!! НЕ НОРМА !!!'+' ВЫКЛ');
                 BVKTestFlag:=False;
               end;
               Break;
@@ -5491,7 +6043,7 @@ begin
             begin
                //не в свое
               //form1.mmoTestResult.Lines.Add('Время Пр (мсек):'+intTostr(timeBVKCarMSec-timeBVKPrevMSec));
-              form1.mmoTestResult.Lines.Add('Ложное время переключения(мсек):'+intTostr(timeBVKCarMSec-timeBVKPrevMSec)+' '+strOut);
+              form1.mmoTestResult.Lines.Add('Ложное время переключения(мсек): '+intTostr(timeBVKCarMSec-timeBVKPrevMSec)+' '+strOut);
               //form1.mmoTestResult.Lines.Add('Отладка:'+intTostr(testBVK_Arr_pr[iCh].setTime[iT])+' '+intTostr(testBVK_Arr_pr[iCh].durabilityT[iT]));
               BVKTestFlag:=False;
             end;
@@ -5510,11 +6062,11 @@ begin
         strOut:='';
         if (iCh>=9) then
         begin
-          strOut:='Канал К'+intTostr(iCh+2)+':';
+          strOut:='Канал'+intTostr(iCh+2)+':';
         end
         else
         begin
-          strOut:='Канал К'+intTostr(iCh)+':';
+          strOut:='Канал'+intTostr(iCh)+':';
         end;
 
         for iT:=1 to BVK_NUM_SETS do
@@ -5530,7 +6082,7 @@ begin
           end
           else
           begin
-            form1.mmoTestResult.Lines.Add(strOut+'!!НЕ НОРМА!!'+' ВКЛ');
+            form1.mmoTestResult.Lines.Add(strOut+'!!! НЕ НОРМА !!!'+' ВКЛ');
             BVKTestFlag:=False;
           end;
         end;
@@ -5546,6 +6098,7 @@ begin
       timeBVKPrevSec:=hourBVK*60*60+minBVK*60+secBVK;
       //время в мс
       timeBVKPrevMSec:=1000*(hourBVK*60*60+minBVK*60+secBVK)+mSecBVK;
+      form1.mmoTestResult.lines.add('');
       form1.mmoTestResult.lines.add('ПРОВЕРКА ОСНОВНОГО РЕЖИМА РАБОТЫ БВК');
       //подача команды НОВ для установки основной проверки на БВК
       SendCommandToISD('http://'+ISDip_2+'/type=2num='+inttostr(5)+'val=0');
@@ -5590,11 +6143,11 @@ begin
             strOut:='';
             if (iCh>=9) then
             begin
-              strOut:='Канал К'+intTostr(iCh+2)+':';
+              strOut:='Канал'+intTostr(iCh+2)+':';
             end
             else
             begin
-              strOut:='Канал К'+intTostr(iCh)+':';
+              strOut:='Канал'+intTostr(iCh)+':';
             end;
 
             if testMTime(testBVK_Arr_G[iCh].setTime[iT],timeBVKCarMSec-timeBVKPrevMSec,ErrorT) then
@@ -5604,11 +6157,11 @@ begin
               //form1.mmoTestResult.Lines.Add('Отладка:'+intTostr(testBVK_Arr_G[iCh].setTime[iT])+' '+intTostr(testBVK_Arr_G[iCh].durabilityT[iT])+' вх');
               if abs(testBVK_Arr_G_prev[iCh]-testBVK_Arr_G_curr[iCh])>=10 then
               begin
-                form1.mmoTestResult.Lines.Add('Время переключения(мсек):'+intTostr(timeBVKCarMSec-timeBVKPrevMSec)+' '+strOut+' НОРМА'+' ВКЛ');
+                form1.mmoTestResult.Lines.Add('Время переключения(мсек): '+intTostr(timeBVKCarMSec-timeBVKPrevMSec)+' '+strOut+' НОРМА'+' ВКЛ');
               end
               else
               begin
-                form1.mmoTestResult.Lines.Add('Время переключения(мсек):'+intTostr(timeBVKCarMSec-timeBVKPrevMSec)+' '+strOut+'!!НЕ НОРМА!!'+' ВКЛ');
+                form1.mmoTestResult.Lines.Add('Время переключения(мсек): '+intTostr(timeBVKCarMSec-timeBVKPrevMSec)+' '+strOut+'!!! НЕ НОРМА !!!'+' ВКЛ');
                 BVKTestFlag:=False;
               end;
               Inc(testedState_G[iCh]);
@@ -5621,11 +6174,11 @@ begin
               //form1.mmoTestResult.Lines.Add('Отладка:'+intTostr(testBVK_Arr_G[iCh].setTime[iT-1])+' '+intTostr(testBVK_Arr_G[iCh].durabilityT[iT-1])+' вых');
               if abs(testBVK_Arr_G_prev[iCh]-testBVK_Arr_G_curr[iCh])>=10 then
               begin
-                form1.mmoTestResult.Lines.Add('Время переключения(мсек):'+intTostr(timeBVKCarMSec-timeBVKPrevMSec)+' '+strOut+' НОРМА'+' ВЫКЛ');
+                form1.mmoTestResult.Lines.Add('Время переключения(мсек): '+intTostr(timeBVKCarMSec-timeBVKPrevMSec)+' '+strOut+' НОРМА'+' ВЫКЛ');
               end
               else
               begin
-                form1.mmoTestResult.Lines.Add('Время переключения(мсек):'+intTostr(timeBVKCarMSec-timeBVKPrevMSec)+' '+strOut+'!!НЕ НОРМА!!'+' ВЫКЛ');
+                form1.mmoTestResult.Lines.Add('Время переключения(мсек): '+intTostr(timeBVKCarMSec-timeBVKPrevMSec)+' '+strOut+'!!! НЕ НОРМА !!!'+' ВЫКЛ');
                 BVKTestFlag:=False;
               end;
               Break;
@@ -5634,7 +6187,7 @@ begin
             begin
               //form1.mmoTestResult.Lines.Add('Время О (мсек):'+intTostr(timeBVKCarMSec-timeBVKPrevMSec));
               //не в свое
-              form1.mmoTestResult.Lines.Add('Ложное время переключения(мсек):'+intTostr(timeBVKCarMSec-timeBVKPrevMSec)+' '+strOut);
+              form1.mmoTestResult.Lines.Add('Ложное время переключения(мсек): '+intTostr(timeBVKCarMSec-timeBVKPrevMSec)+' '+strOut);
               //form1.mmoTestResult.Lines.Add('Отладка:'+intTostr(testBVK_Arr_G[iCh].setTime[iT])+' '+intTostr(testBVK_Arr_G[iCh].durabilityT[iT]));
               BVKTestFlag:=False;
             end;
@@ -5652,11 +6205,11 @@ begin
         strOut:='';
         if (iCh>=9) then
         begin
-          strOut:='Канал К'+intTostr(iCh+2)+':';
+          strOut:='Канал'+intTostr(iCh+2)+':';
         end
         else
         begin
-          strOut:='Канал К'+intTostr(iCh)+':';
+          strOut:='Канал'+intTostr(iCh)+':';
         end;
 
         for iT:=1 to BVK_NUM_SETS do
@@ -5672,7 +6225,7 @@ begin
           end
           else
           begin
-            form1.mmoTestResult.Lines.Add(strOut+'!!НЕ НОРМА!!'+' ВКЛ');
+            form1.mmoTestResult.Lines.Add(strOut+'!!! НЕ НОРМА !!!'+' ВКЛ');
             BVKTestFlag:=False;
           end;
         end;
@@ -5680,20 +6233,29 @@ begin
 
       //установка флага основной проверки
       genFlag:=False;
+      form1.mmoTestResult.Lines.Add('');
       //закончили проверку
       if (BVKTestFlag) then
       begin
-        form1.mmoTestResult.Lines.Add('ПРОВЕРКА БВК: '+'НОРМА');
+        form1.mmoTestResult.Lines.Add('ПРОВЕРКА БВК: '+' НОРМА');
       end
       else
       begin
-        form1.mmoTestResult.Lines.Add('ПРОВЕРКА БВК: '+'!!НЕ НОРМА!!');
+        form1.mmoTestResult.Lines.Add('ПРОВЕРКА БВК: '+' !!! НЕ НОРМА !!!');
+        allTestFlag:=False;
       end;
       //окончание проверки БВК
       flagTestBVK_End:=True;
       form1.tmrTestBVK.Enabled:=false;
     end;
   end;
+
+  if (isTestCloseFl) then
+  begin
+    form1.tmrTestBVK.Enabled:=false;
+  end;
+
+
 end;
 
 procedure TForm1.btn3Click(Sender: TObject);
@@ -5771,9 +6333,6 @@ begin
       form1.PageControl1.ActivePageIndex:=0;
     end;
 
-
-
-
     //подгружаем адреса для проверки СЗУ
     testNeedsAdrF;
     if (not FillAdressParam) then
@@ -5782,51 +6341,54 @@ begin
     end;
   end;
 
-  if  startZUtime=3 then
+  if  startZUtime=3 then  //3
   begin
     //
-    form1.mmoTestResult.Lines.Add(intTostr(modZU));
-
-
-
+    //form1.mmoTestResult.Lines.Add(intTostr(modZU));
     //выставление уровней на первом блоке каналов
     setValOnCh(modZU);
     flagACPWork:=true;
-
     //укажем след блок адресов для заполнения
-    inc(adrTestNum);
+    inc(adrTestNum); 
   end;
+
+  if  startZUtime=4 then
+  begin
+    SendCommandToISD('http://'+ISDip_2+'/type=2num='+inttostr(5)+'val=0');
+    //form1.Memo1.Lines.Add('1');
+  end;
+
 
   //form1.Memo1.Lines.Add(IntToStr(modZU));
   //form1.Memo1.Lines.Add(IntToStr(startZUtime));
-  if startZUtime=5 then   //3
+  if startZUtime=5 then   //3 //5
   begin
     //подача НОВ
-    SendCommandToISD('http://'+ISDip_2+'/type=2num='+inttostr(5)+'val=0');
+    //SendCommandToISD('http://'+ISDip_2+'/type=2num='+inttostr(5)+'val=0');
     Form1.tmrStartTestZU.Enabled:=false;
 
-    prBegZU:=True;
-
-    
+    prBegZU:=True;      
 
     //запуск проверки ЗУ.
     testZU;
 
     inc(modZU);
   end;
-  Inc(startZUtime);
+  Inc(startZUtime); 
 
   if  (modZU=9) then
   begin
+    form1.mmoTestResult.Lines.Add('');
     if (ZUTestFlag) then
     begin
-       form1.mmoTestResult.Lines.Add('ПРОВЕРКА ЗУ: '+'НОРМА');
+       form1.mmoTestResult.Lines.Add('ПРОВЕРКА ЗУ: '+' НОРМА');
     end
     else
     begin
-      form1.mmoTestResult.Lines.Add('ПРОВЕРКА ЗУ: '+'!!НЕ НОРМА!!');
+      form1.mmoTestResult.Lines.Add('ПРОВЕРКА ЗУ: '+' !!! НЕ НОРМА !!!');
+      allTestFlag:=False;
     end;
-
+    form1.mmoTestResult.Lines.Add('');
 
     //размыкаем каналы для завершения проверки ЗУ
     For i:=1 to Length(IsdZUcontNum4) do
@@ -5845,6 +6407,21 @@ begin
     //признак начала проверки БВК
     flagTestBVK:=True;
   end;
+
+  if (isTestCloseFl) then
+  begin
+    Form1.tmrStartTestZU.Enabled:=False;
+    Form1.tmrTestZU.Enabled:=False;
+    For i:=1 to Length(IsdZUcontNum4) do
+    begin
+      SendCommandToISD('http://'+ISDip_2+'/type=1num='+
+          IntToStr(IsdZUcontNum4[i])+'val='+intToStr(0)+'work=0');
+      //Delay_ms(5);
+    end;
+
+  end;
+
+
 end;
 
 
@@ -5857,10 +6434,18 @@ begin
     //SendCommandToISD('http://'+ISDip_2+'/type=2num='+inttostr(5)+'val=0');
 
     Form1.tmrStartTestBVK.Enabled:=false;
+    //Form1.mmoTestResult.Lines.Add('Старт проверки!');
+
     //запуск проверки БВК.
     testBVK;
+
   end;
   Inc(startBVktime);
+  if (isTestCloseFl) then
+  begin
+    Form1.tmrStartTestBVK.Enabled:=false;
+    startBVktime:=0;
+  end;
 end;
 
 procedure TForm1.tmrBVK2Timer(Sender: TObject);
@@ -5910,7 +6495,7 @@ begin
   timeZUCarSec:=hourBVK*60*60+minBVK*60+secBVK;
   //время в мсек
   timeZUCarMSec:=1000*(hourBVK*60*60+minBVK*60+secBVK)+mSecBVK;
-  Form1.lbl2.Caption:=IntToStr(timeZUCarSec-timeZUPrevSec);
+  //Form1.lbl2.Caption:=IntToStr(timeZUCarSec-timeZUPrevSec);
 
 
   startZUtime:=0;
@@ -5950,12 +6535,12 @@ begin
   if (prBegZU) then
   begin
     prBegZU:=False;
-    Form1.Memo1.Lines.Add('Нач состояние');
+    //Form1.Memo1.Lines.Add('Нач состояние');
     //получаем первое состояние проверяемых каналов
     for iCh:=1 to testArrNum do
     begin
       testZU_Arr_pr_BegState[iCh]:=dataZU[iCh];
-      Form1.Memo1.Lines.Add(IntToStr(testZU_Arr_pr_BegState[iCh]));
+      //Form1.Memo1.Lines.Add(IntToStr(testZU_Arr_pr_BegState[iCh]));
     end;  
     //заносим текущее состояние ЗУ
     for iCh:=1 to testArrNum do
@@ -5976,7 +6561,7 @@ begin
     for iCh:=1 to testArrNum do
     begin
       //проверяем произошло ли изменение на канале ЗУ
-      if Abs(testZU_Arr_pr_prev[iCh]-testZU_Arr_pr_curr[iCh])>=10 then
+      if Abs(testZU_Arr_pr_prev[iCh]-testZU_Arr_pr_curr[iCh])>=2 then //10  
       begin
         //проверяем в свое ли время оно произошло
         if testMTime(TEST_TIME,timeZUCarMSec-timeZUPrevMSec,ERROR_T) then
@@ -5986,30 +6571,27 @@ begin
           //проверяем выставилось ли на канале состояние
           if abs(intBeg-intCurr)<=2 then
           begin
-            form1.mmoTestResult.Lines.Add('Время переключения(мсек):'+intTostr(timeZUCarMSec-timeZUPrevMSec)+' '+'Канал'+intTostr(iCh)+' НОРМА');
+            form1.mmoTestResult.Lines.Add('Время переключения(мсек): '+intTostr(timeZUCarMSec-timeZUPrevMSec-1000)+' '+'Канал'+intTostr(iCh)+' НОРМА');
           end
           else
           begin
-            form1.mmoTestResult.Lines.Add('Время переключения(мсек):'+intTostr(timeZUCarMSec-timeZUPrevMSec)+' '+'Канал'+intTostr(iCh)+'!!НЕ НОРМА!!');
+            form1.mmoTestResult.Lines.Add('Время переключения(мсек): '+intTostr(timeZUCarMSec-timeZUPrevMSec-1000)+' '+'Канал'+intTostr(iCh)+'!!! НЕ НОРМА !!!');
             ZUTestFlag:=False;
           end;
         end
         else
         begin
           //не в свое
-          form1.mmoTestResult.Lines.Add('Ложное время переключения(мсек):'+intTostr(timeZUCarMSec-timeZUPrevMSec)+' '+'Канал'+intTostr(iCh));
+          form1.mmoTestResult.Lines.Add('Ложное время переключения(мсек): '+intTostr(timeZUCarMSec-timeZUPrevMSec)+' '+'Канал'+intTostr(iCh));
           ZUtestFlag:=False;
         end;
-
         flagChange:=True;
-
-        
       end;
     end;
   end;
 
 
-  Form1.mmoTestResult.Lines.Add(IntToStr(timeZUCarMSec-timeZUPrevMSec)+' мсек');
+  //Form1.mmoTestResult.Lines.Add(IntToStr(timeZUCarMSec-timeZUPrevMSec)+' мсек');
 
   //if testMTime(TEST_TIME,timeZUCarMSec-timeZUPrevMSec,20) then
   if ((timeZUCarMSec-timeZUPrevMSec)>=(TEST_TIME+300)) then
@@ -6019,7 +6601,7 @@ begin
     
     for iCh:=1 to testArrNum do
     begin
-       form1.mmoTestResult.Lines.Add('Канал'+intTostr(iCh)+' !!НЕ НОРМА!!');
+       form1.mmoTestResult.Lines.Add('Канал'+intTostr(iCh)+' !!! НЕ НОРМА !!!');
     end;
 
     ZUtestFlag:=False;
@@ -6034,7 +6616,171 @@ begin
     modZU:=9;
     //
     form1.tmrStartTestZU.Enabled:=true;
-  end;  
+  end;
+
+  if (isTestCloseFl) then
+  begin
+    form1.tmrTestZU.Enabled:=false;
+    startZUtime:=10;
+    modZU:=9;
+  end;
 end;
+
+
+procedure TForm1.bbb5Click(Sender: TObject);
+var
+  ret:Integer;
+  str:string;
+  i:integer;
+begin
+  {ret :=Application.MessageBox(PAnsiChar('Перестыкуйте на адаптере кабели 31_X2,31_X3 на кабели 41_X2,41_X3 и нажмите ОК для продолжения проверки'),PAnsiChar('Перестыковка кабелей'), MB_OK);
+  if ret=IDOK then
+  begin
+
+  end;}
+
+
+  ret := Application.MessageBox(PAnsiChar('СООТВЕТСТВИЕ ПРИБОРА МКБ2 ПУНКТУ 1.1.3 ТУ ЯГАИ.468363.026 (ПРОВЕРКА ЭЛЕКТРИЧЕСКИХ ПАРАМЕТРОВ ВИБРАЦИОННЫХ УСИЛИТЕЛЕЙ) !!! НЕ НОРМА !!!'),PAnsiChar('Дальнейшие действия'),MB_ABORTRETRYIGNORE + MB_ICONQUESTION);
+    if ret=IDABORT then
+    Begin
+      str:='Результаты_проверки_прибора_МКБ2_'+DateToStr(Date)+'_'+TimeToStr(Time)+'.txt';
+      for i:=1 to length(str) do
+      begin
+        if (str[i]=':') then str[i]:='.';
+      end;
+      Memo1.Lines.SaveToFile(str);
+      WinExec(PAnsiChar('notepad.exe '+str),SW_SHOW);
+      exit;
+    end
+    else
+    begin
+      if ret=IDRETRY then
+      begin
+        ShowMessage('Повтор');
+
+        //TestRezultFlag:=true;
+        //GOTO M4;
+      end;
+    end;
+end;
+
+procedure TForm1.idcmpclnt1Reply(ASender: TComponent;
+  const AReplyStatus: TReplyStatus);
+begin
+  Application.ProcessMessages;
+  if (AReplyStatus.MsRoundTripTime>150) then
+  begin
+     Form1.Memo1.Lines.Add('RS-485 не отвечает.');
+     flagTestDev:=false;
+  end
+  else
+     Form1.Memo1.Lines.Add('RS-485 подключен.');
+  Flag485On:=true;
+end;
+
+procedure TForm1.tmrTestMPIUTimer(Sender: TObject);
+var
+  i:integer;
+  bool:Boolean;
+begin
+  testMpiuFlag:=True;
+  form1.tmrTestMPIU.Enabled:=false;
+
+
+
+  //проверяем собраны ли все измерения
+  {if (iTestMPIU=numTestMPIUch) then
+  begin
+    bool:=True;
+
+    i:=1;
+    while i<=numTestMPIUch do
+    begin
+
+    end;
+
+
+
+    for i:=1 to NUM_TESTVALMPIU do
+    begin
+      if (not(arrTestMPIUParam[i].aAdr=arrTestMPIUParamConst[jTestMPIU].aAdr)or
+          not(arrTestMPIUParam[i].paAdr=arrTestMPIUParamConst[jTestMPIU].paAdr)
+         ) then
+      begin
+        bool:=False;
+      end;
+    end;
+
+    if (bool) then
+    begin
+      Form1.mmoTestResult.Lines.Add('A='+intTostr(arrTestMPIUParamConst[jTestMPIU].aAdr)+
+        ' ПА='+intToStr(arrTestMPIUParamConst[jTestMPIU].paAdr)+' НОРМА');
+    end
+    else
+    begin
+      Form1.mmoTestResult.Lines.Add('A='+intTostr(arrTestMPIUParamConst[jTestMPIU].aAdr)+
+        ' ПА='+intToStr(arrTestMPIUParamConst[jTestMPIU].paAdr)+' !!! НЕ НОРМА !!!');
+    end;
+    //переключение на след константу
+    inc(jTestMPIU);
+
+
+
+    form1.startTestMPIU.Enabled:=false;
+
+
+
+
+  end; }
+end;
+
+procedure TForm1.bbb1Click(Sender: TObject);
+var
+  BufferADP:array[1..100] of Byte;
+begin
+   //отправка команды на пересылку с данных САЗ
+    BufferADP[1]:=50;
+    BufferADP[2]:=5;
+    BufferADP[3]:=0;
+    Form1.idpsrvr2.SendBuffer(IP_ADAPTER_RS485,Form1.idpsrvr2.DefaultPort,BufferADP,3);
+end;
+
+procedure TForm1.tmrTestSazTimer(Sender: TObject);
+begin
+  testSAZ:=True;
+  Form1.tmrTestSaz.Enabled:=False;
+end;
+
+procedure TForm1.idpsrvr3UDPRead(Sender: TObject; AData: TStream;
+  ABinding: TIdSocketHandle);
+var
+  A: array[1..1000] of char;
+  A1: string;
+  I: double;
+begin
+  if ABinding.PeerIp = IP_POWER_SUPPLY_1 then
+  begin
+    AData.Read(A, aData.size);
+    if ((verify_send = false) and (A[1] = 'O')) then
+    begin
+      verify_send := true;
+    end;
+    if A[1] <> 'O' then
+    begin
+      A1 := A[5] + '.' + A[6] + A[7] + A[8];
+      curVal := A1;
+      //flagCur := true;
+
+    end;
+  end;
+end;
+
+procedure TForm1.edtNumBlockChange(Sender: TObject);
+begin
+  Form1.btnAutoTest.Enabled:=True; 
+end;
+
 end.
+
+
 

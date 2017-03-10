@@ -35,6 +35,10 @@ const
   //знач. маркера БУС.
   BUS_MARKER_VAL=65535;
 
+  SAZ_NUM=22;
+
+  //константа для округления калибровки для МКТ3
+  ROUND_P_N=32;
 type
   //тип двойного буфера (для буфера цикла)
   TDBufCircleArray = array[0..1] of array[1..SIZEMASGROUP*32] of word;
@@ -182,6 +186,8 @@ var
   countPastOut: integer;
   tempArr:array of TtempCh;
   tempArr2:array of TtempCh;
+  tempArr3:array of TtempCh;
+
   slowArr:array of TslowCh;
   contArr:array of TcontCh;
 
@@ -219,6 +225,43 @@ var
   //нач состояние каналов прибора
   testZU_Arr_pr_BegState:array[1..100] of Integer;//!!
 
+
+  flagSinxTemp:Boolean=False;
+  iColibr:integer=0;
+
+  testSAZ:Boolean=false;
+  startWSaz:Boolean;
+  iTestSazArr:Integer=1;
+  testSazArr:array[1..SAZ_NUM] of word;
+  testSazArrConst:array[1..SAZ_NUM] of word=
+  (1361,681,119,18,196,9,32,136,19,64,76,29,96,16,39,128,212,48,160,152,58,192);
+
+
+
+  BufferADP:array[1..100] of Byte;
+
+
+  iMaxScale4Arr:Integer;
+  iMinScale4Arr:Integer;
+  iMaxScale3Arr:Integer;
+  iMinScale3Arr:Integer;
+  iMaxScale2Arr:Integer;
+  iMinScale2Arr:Integer;
+  iMaxScale1Arr:Integer;
+  iMinScale1Arr:Integer;
+
+  maxScale4Arr:array[1..ROUND_P_N] of Integer;
+  minScale4Arr:array[1..ROUND_P_N] of Integer;
+  maxScale3Arr:array[1..ROUND_P_N] of Integer;
+  minScale3Arr:array[1..ROUND_P_N] of Integer;
+  maxScale2Arr:array[1..ROUND_P_N] of Integer;
+  minScale2Arr:array[1..ROUND_P_N] of Integer;
+  maxScale1Arr:array[1..ROUND_P_N] of Integer;
+  minScale1Arr:array[1..ROUND_P_N] of Integer;
+
+  isTestCloseFl:Boolean;
+
+  fileName:string;
   procedure OutMF(errMF:Integer);
   procedure OutMG(errMG:Integer);
   //функции для проверки соответствует текущая группа или цикл нужной
