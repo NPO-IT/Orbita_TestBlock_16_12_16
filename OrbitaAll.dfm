@@ -1,6 +1,6 @@
 object Form1: TForm1
-  Left = 192
-  Top = 273
+  Left = 235
+  Top = 205
   BorderIcons = [biSystemMenu]
   BorderStyle = bsSingle
   Caption = #1057#1087#1077#1094#1080#1072#1083#1100#1085#1086#1077' '#1087#1088#1086#1075#1088#1072#1084#1084#1085#1086#1077' '#1086#1073#1077#1089#1087#1077#1095#1077#1085#1080#1077' '#1086#1073#1088#1072#1073#1086#1090#1082#1080' '#1080' '#1088#1077#1075#1080#1089#1090#1088#1072#1094#1080#1080
@@ -1337,9 +1337,9 @@ object Form1: TForm1
   object btnAutoTest: TButton
     Left = 1136
     Top = 48
-    Width = 225
+    Width = 201
     Height = 81
-    Caption = #1040#1074#1090#1086#1084#1072#1090#1080#1095#1077#1089#1082#1072#1103' '#1087#1088#1086#1074#1077#1088#1082#1072
+    Caption = #1040#1074#1090#1086' '#1087#1088#1086#1074#1077#1088#1082#1072
     Enabled = False
     Font.Charset = DEFAULT_CHARSET
     Font.Color = clWindowText
@@ -1448,11 +1448,17 @@ object Form1: TForm1
     OnChange = edtNumBlockChange
   end
   object prTestButton: TButton
-    Left = 1360
+    Left = 1336
     Top = 48
-    Width = 177
+    Width = 201
     Height = 81
     Caption = #1055#1088'. '#1087#1088#1086#1074#1077#1088#1082#1072
+    Font.Charset = DEFAULT_CHARSET
+    Font.Color = clWindowText
+    Font.Height = -16
+    Font.Name = 'MS Sans Serif'
+    Font.Style = [fsBold]
+    ParentFont = False
     TabOrder = 8
   end
   object TimerOutToDia: TTimer
@@ -1520,15 +1526,15 @@ object Form1: TForm1
     Request.BasicAuthentication = False
     Request.UserAgent = 'Mozilla/3.0 (compatible; Indy Library)'
     HTTPOptions = [hoForceEncodeParams]
-    Left = 1384
-    Top = 64
+    Left = 1416
+    Top = 48
   end
   object idpsrvr1: TIdUDPServer
     Bindings = <>
     DefaultPort = 6008
     OnUDPRead = idpsrvr1UDPRead
-    Left = 1360
-    Top = 64
+    Left = 1392
+    Top = 48
   end
   object tmr1_1_10_2: TTimer
     Enabled = False
@@ -1571,8 +1577,8 @@ object Form1: TForm1
     Request.BasicAuthentication = False
     Request.UserAgent = 'Mozilla/3.0 (compatible; Indy Library)'
     HTTPOptions = [hoForceEncodeParams]
-    Left = 1408
-    Top = 64
+    Left = 1440
+    Top = 48
   end
   object tmrMKB_Dpart: TTimer
     Enabled = False
@@ -1625,14 +1631,14 @@ object Form1: TForm1
   object idpsrvr2: TIdUDPServer
     Bindings = <>
     DefaultPort = 1011
-    Left = 1432
-    Top = 64
+    Left = 1464
+    Top = 48
   end
   object idcmpclnt1: TIdIcmpClient
     Port = 1
     OnReply = idcmpclnt1Reply
-    Left = 1408
-    Top = 40
+    Left = 1352
+    Top = 48
   end
   object tmrTestMPIU: TTimer
     Enabled = False
