@@ -127,6 +127,13 @@ type
     lbNumBlock: TLabel;
     edtNumBlock: TEdit;
     prTestButton: TButton;
+    tsPeriodTest: TTabSheet;
+    diaPerTestFast: TChart;
+    diaPerTestTemp: TChart;
+    brsrsSeries8: TBarSeries;
+    brsrsSeries9: TBarSeries;
+    tmrPrTest: TTimer;
+    tmrStartTestPr: TTimer;
     procedure startReadACPClick(Sender: TObject);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure FormCreate(Sender: TObject);
@@ -189,6 +196,10 @@ type
     procedure idpsrvr3UDPRead(Sender: TObject; AData: TStream;
       ABinding: TIdSocketHandle);
     procedure edtNumBlockChange(Sender: TObject);
+    procedure prTestButtonClick(Sender: TObject);
+    procedure tmrPrTestTimer(Sender: TObject);
+    procedure tmrStartTestPrTimer(Sender: TObject);
+    procedure bbb3Click(Sender: TObject);
   private
     { Private declarations }
   public
@@ -2548,7 +2559,10 @@ begin
       form1.fastGist.Series[0].Clear;
       Form1.tempDia.Series[0].Clear;
       Form1.tempGist.Series[0].Clear;
-      
+
+      Form1.diaPerTestFast.Series[0].Clear;
+      Form1.diaPerTestTemp.Series[0].Clear;
+
       //ReadThreadErrorNumber:=4;
       {CloseHandle(hReadThread);
       WaitForSingleObject(hReadThread, 5500);    //INFINITE
@@ -2603,6 +2617,15 @@ begin
   //завершим все работающие циклы
   flagEnd:=true;
 
+  SendCommandToISD('http://'+ISDip_1+'/type=1num=1'+'val=750'+'work=0');
+  SendCommandToISD('http://'+ISDip_1+'/type=1num=2'+'val=750'+'work=0');
+  SendCommandToISD('http://'+ISDip_1+'/type=1num=3'+'val=750'+'work=0');
+
+  startTestBlock:=false;
+  Form1.tmrStartTestPr.Enabled:=false;
+  //запуск таймера проверки
+  Form1.tmrPrTest.Enabled:=false;
+
   isTestCloseFl:=True;//выход из проверки блока
 
   wait(20);
@@ -2613,6 +2636,9 @@ begin
 //  Delay_ms(20);
 //  SetOnPowerSupply(0);
   //======
+
+
+
 
   //завершим приложение по человечески.
   Application.Terminate;
@@ -2760,7 +2786,7 @@ begin
     //form1.diaSlowAnl.Series[0].Clear;
     //form1.diaSlowCont.Series[0].Clear;
     form1.fastDia.Series[0].Clear;
-
+    Form1.diaPerTestFast.Series[0].Clear;
 
     //sleep(3);
     //последовательно разбираем строка за строкой адреса
@@ -3904,10 +3930,14 @@ begin
     //проверяем наличие приборов
     if ((testOnAllTestDevices)and( not isTestCloseFl)) then
     begin
+      //установка первой программы опроса
+      SendCommandToISD('http://'+ISDip_1+'/type=1num=1'+'val=750'+'work=1');
+      SendCommandToISD('http://'+ISDip_1+'/type=1num=2'+'val=750'+'work=1');
+      SendCommandToISD('http://'+ISDip_1+'/type=1num=3'+'val=750'+'work=1');
 
 
 
-      Form1.mmoTestResult.Lines.Add('НОМЕР ПРОВЕРЯЕМОГО БЛОКА: '+form1.edtNumBlock.Text);
+      Form1.mmoTestResult.Lines.Add('НОМЕР ПРОВЕРЯЕМОГО МОДУЛЯ: '+form1.edtNumBlock.Text);
       Form1.mmoTestResult.Lines.Add('');
       //указываем номер пакета адресов для проверки БВК
       {adrTestNum:=3;
@@ -3991,7 +4021,7 @@ begin
 
       allTestFlag:=True;
 
-      
+
       Form1.idpsrvr1.Active:=True;
       while((strtoFloat(curVal) * 1000)<2.0) do
       begin
@@ -4239,7 +4269,14 @@ begin
 
 
      //SetVoltageOnPowerSupply(1,'0000');
-     //Delay_ms(20);   
+     //Delay_ms(20);
+
+     //установка первой программы опроса
+      SendCommandToISD('http://'+ISDip_1+'/type=1num=1'+'val=750'+'work=0');
+      SendCommandToISD('http://'+ISDip_1+'/type=1num=2'+'val=750'+'work=0');
+      SendCommandToISD('http://'+ISDip_1+'/type=1num=3'+'val=750'+'work=0');
+
+
      changeResistance(50000.0);
      setFrequencyOnGenerator(100000,5,m_instr_usbtmc_2[1]);
      SetConf(m_instr_usbtmc_1[0],'CONF:VOLT:DC');
@@ -6778,6 +6815,243 @@ end;
 procedure TForm1.edtNumBlockChange(Sender: TObject);
 begin
   Form1.btnAutoTest.Enabled:=True; 
+end;
+
+procedure TForm1.prTestButtonClick(Sender: TObject);
+var
+  i:Integer;
+begin
+  if  (form1.prTestButton.Caption='Старт пер. проверка') then
+  begin
+    form1.prTestButton.Caption:='Стоп пер. проверка';
+
+    if (tFlagPr) then
+    begin
+      tFlagPr:=False;
+
+       //==
+      //периодичесие испытания
+      //проверяем что загрузились настройки прибора в  конф. файле
+      if ((iniRead)and( not isTestCloseFl)) then
+      begin
+        form1.mmoTestResult.Clear;
+
+        //флаг для выхода из проверки блока
+        //isTestCloseFl:=false;
+
+        //установка первой программы опроса
+        SendCommandToISD('http://'+ISDip_1+'/type=1num=1'+'val=750'+'work=1');
+        SendCommandToISD('http://'+ISDip_1+'/type=1num=2'+'val=750'+'work=1');
+        SendCommandToISD('http://'+ISDip_1+'/type=1num=3'+'val=750'+'work=1');
+
+
+        Form1.mmoTestResult.Lines.Add('НОМЕР ПРОВЕРЯЕМОГО МОДУЛЯ: '+form1.edtNumBlock.Text);
+        Form1.mmoTestResult.Lines.Add('');
+
+        fileName := 'Проверка_блока_периодика' + DateToStr(Date) + '_' + TimeToStr(Time) + '.txt';
+            for i := 1 to length(fileName) do if (fileName[i] = ':') then fileName[i] := '.';
+
+
+        SetOnPowerSupply(0);
+        SetVoltageOnPowerSupply(1,'0000');
+        Delay_ms(20);
+        //SetOnPowerSupply(0);
+        //замыкаем контакты команды НОВ
+        SendCommandToISD('http://'+ISDip_2+'/type=2num='+inttostr(5)+'val=1');
+
+        SetVoltageOnPowerSupply(1,'2700');
+        SetOnPowerSupply(1);
+
+        form1.PageControl1.ActivePageIndex:=5;
+
+
+
+        if Form1.startReadACP.Caption='Прием' then
+        begin
+          //начали прием данных с прибора
+          Form1.startReadACP.Click;  //!!!
+        end;
+
+
+        //установка флага что надо собирать колибровки
+        startTestBlock:=true;
+        //устанавливаем пакет адресов для проверки МКТ3
+        adrTestNum:=15;
+        //выставялем адреса МКТ3
+        testNeedsAdrF;
+        //заполним параметры адресов в массив параметров адресов
+        FillAdressParam;
+
+        Form1.btnAutoTest.Enabled:=False;
+        form1.saveAdrB.Enabled:=false;
+        Form1.rb1.Enabled:=False;
+        Form1.rb2.Enabled:=False;
+        Form1.propB.Enabled:=false;
+        Form1.startReadACP.Enabled:=False;
+        Form1.startReadTlmB.Enabled:=False;
+        form1.tlmWriteB.Enabled:=False;
+        Form1.upGistFastSize.Enabled:=False;
+        Form1.downGistFastSize.Enabled:=False;
+        Form1.upGistSlowSize.Enabled:=False;
+        Form1.downGistSlowSize.Enabled:=False;
+        Form1.upGistTempSize.Enabled:=false;
+        Form1.downGistTempSize.Enabled:=false;
+        Form1.PageControl1.Enabled:=false;
+        Form1.OrbitaAddresMemo.Enabled:=false;
+        Form1.edtNumBlock.Enabled:=False;
+
+        iMaxScale4Arr:=1;
+        iMinScale4Arr:=1;
+        iMaxScale3Arr:=1;
+        iMinScale3Arr:=1;
+        iMaxScale2Arr:=1;
+        iMinScale2Arr:=1;
+        iMaxScale1Arr:=1;
+        iMinScale1Arr:=1;
+
+        //stPrTest:=false;
+
+  //      if Form1.startReadACP.Caption='Стоп' then
+  //      begin
+  //        //установка флага что надо собирать колибровки
+  //        startTestBlock:=true;
+  //        //устанавливаем пакет адресов для проверки МКТ3
+  //        adrTestNum:=15;
+  //        //выставялем адреса МКТ3
+  //        testNeedsAdrF;
+  //        //заполним параметры адресов в массив параметров адресов
+  //        FillAdressParam;
+  //      end;
+
+
+        //ждем 10 секунд.
+        //Delay_S(10);
+
+  //      for i:=1 to 10 do
+  //      begin
+  //         Delay_S(1);
+  //         Application.ProcessMessages;
+  //      end;
+
+  //      while ( not stPrTest) do
+  //      begin
+  //        Application.ProcessMessages;
+  //      end;
+
+        Form1.tmrStartTestPr.Enabled:=True;
+
+
+
+        //запуск таймера проверки
+        //Form1.tmrPrTest.Enabled:=True;
+
+      end
+      else
+      begin
+        Form1.mmoTestResult.Lines.Add('Ошибка загрузки данных из файла!');
+      end;
+    //==
+    end
+    else
+    begin
+       Form1.btnAutoTest.Enabled:=False;
+      form1.saveAdrB.Enabled:=false;
+      Form1.rb1.Enabled:=False;
+      Form1.rb2.Enabled:=False;
+      Form1.propB.Enabled:=false;
+      Form1.startReadACP.Enabled:=False;
+      Form1.startReadTlmB.Enabled:=False;
+      form1.tlmWriteB.Enabled:=False;
+      Form1.upGistFastSize.Enabled:=False;
+      Form1.downGistFastSize.Enabled:=False;
+      Form1.upGistSlowSize.Enabled:=False;
+      Form1.downGistSlowSize.Enabled:=False;
+      Form1.upGistTempSize.Enabled:=false;
+      Form1.downGistTempSize.Enabled:=false;
+      Form1.PageControl1.Enabled:=false;
+      Form1.OrbitaAddresMemo.Enabled:=false;
+      Form1.edtNumBlock.Enabled:=False;
+
+      iMaxScale4Arr:=1;
+      iMinScale4Arr:=1;
+      iMaxScale3Arr:=1;
+      iMinScale3Arr:=1;
+      iMaxScale2Arr:=1;
+      iMinScale2Arr:=1;
+      iMaxScale1Arr:=1;
+      iMinScale1Arr:=1;
+
+      //запуск таймера проверки
+      Form1.tmrStartTestPr.Enabled:=True;
+    end;  
+  end
+  else
+  begin
+    form1.prTestButton.Caption:='Старт пер. проверка';
+
+    Form1.btnAutoTest.Enabled:=True;
+    form1.saveAdrB.Enabled:=True;
+    Form1.rb1.Enabled:=True;
+    Form1.rb2.Enabled:=True;
+    Form1.propB.Enabled:=True;
+    Form1.startReadACP.Enabled:=True;
+    Form1.startReadTlmB.Enabled:=True;
+    form1.tlmWriteB.Enabled:=True;
+    Form1.upGistFastSize.Enabled:=True;
+    Form1.downGistFastSize.Enabled:=True;
+    Form1.upGistSlowSize.Enabled:=True;
+    Form1.downGistSlowSize.Enabled:=True;
+    Form1.upGistTempSize.Enabled:=True;
+    Form1.downGistTempSize.Enabled:=True;
+    Form1.PageControl1.Enabled:=True;
+    Form1.OrbitaAddresMemo.Enabled:=True;
+    Form1.edtNumBlock.Enabled:=True;
+    //установка флага что надо собирать колибровки
+    startTestBlock:=false;
+    Form1.tmrStartTestPr.Enabled:=false;
+    //запуск таймера проверки
+    Form1.tmrPrTest.Enabled:=false;
+  end;   
+end;
+
+procedure TForm1.tmrPrTestTimer(Sender: TObject);
+var
+  i:Integer;
+begin
+  // проверка МКТ3
+  for i:=1 to 32 do
+  begin
+    if (periodTestMKT3[i]=periodTestMKT3_Const[i]) then
+    begin
+    end
+    else
+    begin
+      Form1.mmoTestResult.Lines.Add('Прибор: МКТ3 '+' Канал'+IntTostr(i)+' Проверяемое значение на канале: '+floatToStr(periodTestMKT3_Const[i])+'%шк Значение на канале: '+floatTostr(periodTestMKT3[i])+'%шк'+' !!! НЕ НОРМА !!!');
+    end;
+  end;
+  // проверка МКБ2 и ЗУ
+  for i:=1 to 32 do
+  begin
+    if (periodTestMKB2_ZU[i]=periodTestMKB2_ZU_Const[i]) then
+    begin
+    end
+    else
+    begin
+      Form1.mmoTestResult.Lines.Add('Прибор: МКБ2 '+' Канал'+IntTostr(i)+' Проверяемое значение на канале: '+floatToStr(periodTestMKB2_ZU_Const[i])+'%шк Значение на канале: '+floatTostr(periodTestMKB2_ZU[i])+'%шк'+' !!! НЕ НОРМА !!!');
+    end;
+  end;
+end;
+
+procedure TForm1.tmrStartTestPrTimer(Sender: TObject);
+begin
+  Form1.tmrStartTestPr.Enabled:=false;
+  //запуск таймера проверки
+  Form1.tmrPrTest.Enabled:=True;
+end;
+
+procedure TForm1.bbb3Click(Sender: TObject);
+begin
+Form1.tmrStartTestPr.Enabled:=True;
 end;
 
 end.

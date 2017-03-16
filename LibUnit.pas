@@ -262,6 +262,23 @@ var
   isTestCloseFl:Boolean;
 
   fileName:string;
+
+  periodTestMKT3_Const:array[1..32] of Double=
+  (0.0,6.25,9.37,18.75,25.0,37.5,50.0,75.0,100.0,18.75,37.5,0.0,6.25,6.25{9.37},
+   18.75,25.0,37.5,50.0,75.0,100.0,18.75,37.5,18.75,37.5,18.75,37.5,18.75,
+   37.5,18.75,37.5,18.75,37.5);
+  periodTestMKB2_ZU_Const:array[1..32] of Double=
+  (0.0,30.01,60.03,90.04,8.5,34.31,74.2,100.0,
+   0.0,60.03,8.5,74.2,0.0,60.03,8.5,74.2,0.0,60.03,8.5,74.2,
+   0.0,60.03,8.5,74.2,0.0,60.03,8.5,74.2,0.0,60.03,8.5,74.2);
+
+  periodTestMKT3:array[1..32] of Double;
+  periodTestMKB2_ZU:array[1..32] of Double;
+
+  stPrTest:Boolean;
+
+  tFlagPr:Boolean=True;
+
   procedure OutMF(errMF:Integer);
   procedure OutMG(errMG:Integer);
   //функции для проверки соответствует текущая группа или цикл нужной

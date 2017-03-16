@@ -223,7 +223,7 @@ var
   maxPointInAdr: integer;
 begin
   //проверяем что активна вкладка температурных
-  if form1.PageControl1.ActivePageIndex = 2 then
+  if ((form1.PageControl1.ActivePageIndex = 2)or(form1.PageControl1.ActivePageIndex = 5)) then  // form1.PageControl1.ActivePageIndex = 2
   begin
     //вычисляем количество точек в пришедшем адресе
     maxPointInAdr := 0;
@@ -1416,14 +1416,29 @@ begin
       Application.ProcessMessages;
     end;}
 
+    if form1.PageControl1.ActivePageIndex = 1 then
+    begin
+      form1.fastDia.Series[0].AddXY(numChanel, fastValT21);
+    end;
 
-    form1.fastDia.Series[0].AddXY(numChanel, fastValT21);
+    if form1.PageControl1.ActivePageIndex = 5 then
+    begin
+      //вывод в процентах шкалы
+      form1.diaPerTestFast.Series[0].AddXY(numChanel, ((fastValT21-25)/220)*100);
+      periodTestMKB2_ZU[numChanel-32]:=((fastValT21-25)/220)*100;
+//      if numChanel=32 then
+//      begin
+//        stPrTest:=True;
+//      end;
+    end;
+
+
 
     //!!
-    if (modZU-1=2) then
-    begin
-      Form1.Memo1.Lines.Add('2');
-    end;
+//    if (modZU-1=2) then
+//    begin
+//      Form1.Memo1.Lines.Add('2');
+//    end;
     //!!
 
 
@@ -1469,7 +1484,23 @@ begin
   //собираем и выводим первое слово T22
   fastValT22 := BuildFastValueT22(masGroupAll[nPoint], numBitOfValue);
   try
-    form1.fastDia.Series[0].AddXY(numChanel, fastValT22 {rrr});
+    if form1.PageControl1.ActivePageIndex = 1 then
+    begin
+      form1.fastDia.Series[0].AddXY(numChanel, fastValT22 {rrr});
+    end;
+
+    if form1.PageControl1.ActivePageIndex = 5 then
+    begin
+      form1.diaPerTestFast.Series[0].AddXY(numChanel, ((fastValT22-4)/56)*100);
+      periodTestMKB2_ZU[numChanel-32]:=((fastValT22-4)/56)*100;
+
+//      if numChanel=32 then
+//      begin
+//        stPrTest:=True;
+//      end;
+    end;
+
+
 
     //ЗУ
     dataZU[numChanel+1]:=fastValT22;
@@ -1532,6 +1563,10 @@ var
   k,l,m:Integer;
 
   currentNum:Integer;
+
+  minSc:Integer;
+  maxSc:Integer;
+
 begin
 
   //вывод первой точки в массиве firstPointValue для текущего адреса
@@ -1541,7 +1576,7 @@ begin
   //вычисление номера текущей выводимой точки
   nPoint := firstPointValue + offsetForYalkTemp;
   //так как массив группы с 0
-  nPoint := nPoint{ - 1};
+  //nPoint := nPoint{ - 1};
 
   //вывод на диа
   {form1.Memo1.Lines.Add('#цикла'+IntToStr(ciklNum)+' №группы:'+IntToStr(groupNum)+
@@ -1555,7 +1590,17 @@ begin
 
   if iTempArr=acumTemp then
   begin
-    form1.tempDia.Series[0].Clear;
+
+
+    if form1.PageControl1.ActivePageIndex = 2 then
+    begin
+      form1.tempDia.Series[0].Clear;
+    end;
+
+    if form1.PageControl1.ActivePageIndex = 5 then
+    begin
+      form1.diaPerTestTemp.Series[0].Clear;
+    end;
 
     currentNum:=0;
     while currentNum<=iTempArr-1 do
@@ -1677,8 +1722,58 @@ begin
       //========
 
 
-      //вывод при проверке ЗУ
-      form1.tempDia.Series[0].AddXY(tempArr[i].num,tempArr[i].val);  //i
+
+
+      if form1.PageControl1.ActivePageIndex = 2 then
+      begin
+        //вывод при проверке ЗУ
+        form1.tempDia.Series[0].AddXY(tempArr[i].num,tempArr[i].val);  //i
+      end;
+
+      if form1.PageControl1.ActivePageIndex = 5 then
+      begin
+        case getScaleNum(tempArr[i].val) of
+          0:
+          begin
+            minSc:=minScale4;
+            maxSc:=maxScale4;
+          end;
+          1:
+          begin
+            minSc:=minScale3;
+            maxSc:=maxScale3;
+          end;
+          2:
+          begin
+            minSc:=minScale2;
+            maxSc:=maxScale2;
+          end;
+          3:
+          begin
+            minSc:=minScale1;
+            maxSc:=maxScale1;
+          end;
+        end;
+
+        if ((minSc<>-1)and(maxSc<>-1)) then
+        begin
+          //вывод при проверке ЗУ
+          form1.diaPerTestTemp.Series[0].AddXY(tempArr[i].num,((tempArr[i].val-minSc)/(maxSc-minSc))*100);  //i
+
+          periodTestMKT3[tempArr[i].num]:=((tempArr[i].val-minSc)/(maxSc-minSc))*100;
+
+//          if (tempArr[i].num=32) then
+//          begin
+//            stPrTest:=True;
+//          end;
+        end;
+
+
+        //вывод при проверке ЗУ
+        //form1.diaPerTestTemp.Series[0].AddXY(tempArr[i].num,tempArr[i].val);  //i
+
+
+      end;
       //tempArr[i].num:=0;
       //tempArr[i].val:=0;
       //form1.Memo1.Lines.Add(IntToStr(tempArr[i].num)+' '+IntToStr(tempArr[i].val));
@@ -1942,10 +2037,64 @@ begin
     end;
   end;
 
-  //вывод для БУС
-  if form1.PageControl1.ActivePageIndex = 4 then
+
+  //вывод на график быстрых периодических испытаний
+  if form1.PageControl1.ActivePageIndex = 5 then
   begin
+    //вывод для быстрых параметров   T22
+    if typeOfAddres = 2 then
+    begin
+      if (flagGroup) then
+      begin
+        //необходимо вынимать слова из конкретных групп
+
+      end
+      else if (flagCikl) then
+      begin
+        //необходимо вынимать слова из конкретных циклов
+        if (flagGroup) then
+        begin
+          //необходимо вынимать слова из конкретных групп
+        end;
+      end
+      else
+      begin
+        //вывод происходит в рамках одной группы
+        outToDiaFastT22(outStep,numOutPoint,firstPointValue,
+          numChanel,numBitOfValue,maxPointInAdr);
+      end;
+    end;
+
+    //вывод для быстрых параметров   T21
+    if typeOfAddres = 3 then
+    begin
+      if (flagGroup) then
+      begin
+        //необходимо вынимать слова из конкретных групп
+
+      end
+      else if (flagCikl) then
+      begin
+        //необходимо вынимать слова из конкретных циклов
+        if (flagGroup) then
+        begin
+          //необходимо вынимать слова из конкретных групп
+        end;
+      end
+      else
+      begin
+        //вывод происходит в рамках одной группы
+        outToDiaFastT21(outStep,numOutPoint,firstPointValue,
+          numChanel,numBitOfValue,maxPointInAdr);
+      end;
+    end;
   end;
+
+
+  //вывод для БУС
+  {if form1.PageControl1.ActivePageIndex = 4 then
+  begin
+  end;}
 end;
 
 
@@ -2064,14 +2213,14 @@ begin
           outToDiaTGeneral;
         end;
       end;
-      4:
+      {4:
       begin
         //БУС {невидима и не используется}
-        if (testFlag_1_1_10_2) then
+        {if (testFlag_1_1_10_2) then
         begin
           outToDiaTGeneral;
         end;
-      end;
+      end;}
       2:
       begin
         //температурные
@@ -2086,6 +2235,14 @@ begin
           outToDiaTGeneral;
         end;
       end;}
+       5:
+      begin
+        //температурные
+        //то на диаграмму выводим все точки
+        outToDiaTGeneral;
+        //вывод быстрых по таймеру не все!
+        form1.TimerOutToDia.Enabled := true;
+      end;
     end;
 
     //вывод всех значений на график

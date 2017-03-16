@@ -1,11 +1,11 @@
 object Form1: TForm1
-  Left = 235
-  Top = 205
+  Left = 229
+  Top = 209
   BorderIcons = [biSystemMenu]
   BorderStyle = bsSingle
-  Caption = #1057#1087#1077#1094#1080#1072#1083#1100#1085#1086#1077' '#1087#1088#1086#1075#1088#1072#1084#1084#1085#1086#1077' '#1086#1073#1077#1089#1087#1077#1095#1077#1085#1080#1077' '#1086#1073#1088#1072#1073#1086#1090#1082#1080' '#1080' '#1088#1077#1075#1080#1089#1090#1088#1072#1094#1080#1080
+  Caption = #1055#1088#1086#1075#1088#1072#1084#1084#1072' '#1087#1088#1086#1074#1077#1088#1082#1080' '#1084#1086#1076#1091#1083#1103' N1-1'
   ClientHeight = 681
-  ClientWidth = 1542
+  ClientWidth = 1543
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -86,11 +86,11 @@ object Form1: TForm1
     ParentFont = False
   end
   object lbNumBlock: TLabel
-    Left = 1184
+    Left = 1144
     Top = 16
-    Width = 116
+    Width = 223
     Height = 20
-    Caption = #1053#1086#1084#1077#1088' '#1073#1083#1086#1082#1072':'
+    Caption = #1047#1072#1074#1086#1076#1089#1082#1086#1081' '#1085#1086#1084#1077#1088' '#1084#1086#1076#1091#1083#1103':'
     Font.Charset = DEFAULT_CHARSET
     Font.Color = clWindowText
     Font.Height = -16
@@ -181,7 +181,7 @@ object Form1: TForm1
     Top = 0
     Width = 903
     Height = 593
-    ActivePage = TabSheet2
+    ActivePage = tsPeriodTest
     TabOrder = 0
     object TabSheet1: TTabSheet
       Caption = #1052#1077#1076#1083'.'
@@ -743,6 +743,88 @@ object Form1: TForm1
           XValues.Order = loAscending
           YValues.DateTime = False
           YValues.Name = 'Y'
+          YValues.Multiplier = 1.000000000000000000
+          YValues.Order = loNone
+        end
+      end
+    end
+    object tsPeriodTest: TTabSheet
+      Caption = #1055#1077#1088'. '#1080#1089#1087'.'
+      ImageIndex = 5
+      object diaPerTestFast: TChart
+        Left = 0
+        Top = 112
+        Width = 897
+        Height = 233
+        BackWall.Brush.Color = clWhite
+        BackWall.Brush.Style = bsClear
+        MarginBottom = 15
+        Title.Font.Charset = DEFAULT_CHARSET
+        Title.Font.Color = clBlue
+        Title.Font.Height = -16
+        Title.Font.Name = 'Arial'
+        Title.Font.Style = [fsBold]
+        Title.Text.Strings = (
+          #1044#1080#1072#1075#1088#1072#1084#1084#1072' '#1041)
+        LeftAxis.Automatic = False
+        LeftAxis.AutomaticMaximum = False
+        LeftAxis.AutomaticMinimum = False
+        LeftAxis.Maximum = 110.000000000000000000
+        Legend.Visible = False
+        View3D = False
+        TabOrder = 0
+        object brsrsSeries8: TBarSeries
+          Marks.ArrowLength = 20
+          Marks.Visible = True
+          SeriesColor = 10485760
+          BarStyle = bsRectGradient
+          XValues.DateTime = False
+          XValues.Name = 'X'
+          XValues.Multiplier = 1.000000000000000000
+          XValues.Order = loAscending
+          YValues.DateTime = False
+          YValues.Name = 'Bar'
+          YValues.Multiplier = 1.000000000000000000
+          YValues.Order = loNone
+        end
+      end
+      object diaPerTestTemp: TChart
+        Left = 0
+        Top = 344
+        Width = 897
+        Height = 225
+        BackWall.Brush.Color = clWhite
+        BackWall.Brush.Style = bsClear
+        MarginBottom = 15
+        Title.Font.Charset = DEFAULT_CHARSET
+        Title.Font.Color = clBlue
+        Title.Font.Height = -16
+        Title.Font.Name = 'Arial'
+        Title.Font.Style = [fsBold]
+        Title.Text.Strings = (
+          #1044#1080#1072#1075#1088#1072#1084#1084#1072' '#1058)
+        BottomAxis.Automatic = False
+        BottomAxis.AutomaticMaximum = False
+        BottomAxis.AutomaticMinimum = False
+        BottomAxis.Maximum = 32.000000000000000000
+        LeftAxis.Automatic = False
+        LeftAxis.AutomaticMaximum = False
+        LeftAxis.AutomaticMinimum = False
+        LeftAxis.Maximum = 1000.000000000000000000
+        Legend.Visible = False
+        View3D = False
+        TabOrder = 1
+        object brsrsSeries9: TBarSeries
+          Marks.ArrowLength = 20
+          Marks.Visible = True
+          SeriesColor = 10485760
+          BarStyle = bsRectGradient
+          XValues.DateTime = False
+          XValues.Name = 'X'
+          XValues.Multiplier = 1.000000000000000000
+          XValues.Order = loAscending
+          YValues.DateTime = False
+          YValues.Name = 'Bar'
           YValues.Multiplier = 1.000000000000000000
           YValues.Order = loNone
         end
@@ -1339,7 +1421,7 @@ object Form1: TForm1
     Top = 48
     Width = 201
     Height = 81
-    Caption = #1040#1074#1090#1086' '#1087#1088#1086#1074#1077#1088#1082#1072
+    Caption = #1040#1074#1090#1086#1084#1072#1090#1080#1095#1077#1089#1082#1072#1103' '#1087#1088#1086#1074#1077#1088#1082#1072
     Enabled = False
     Font.Charset = DEFAULT_CHARSET
     Font.Color = clWindowText
@@ -1348,6 +1430,7 @@ object Form1: TForm1
     Font.Style = [fsBold]
     ParentFont = False
     TabOrder = 7
+    WordWrap = True
     OnClick = btnAutoTestClick
   end
   object mmoTestResult: TMemo
@@ -1440,7 +1523,7 @@ object Form1: TForm1
     OnClick = bbb2Click
   end
   object edtNumBlock: TEdit
-    Left = 1336
+    Left = 1376
     Top = 16
     Width = 161
     Height = 21
@@ -1452,7 +1535,7 @@ object Form1: TForm1
     Top = 48
     Width = 201
     Height = 81
-    Caption = #1055#1088'. '#1087#1088#1086#1074#1077#1088#1082#1072
+    Caption = #1057#1090#1072#1088#1090' '#1087#1077#1088'. '#1087#1088#1086#1074#1077#1088#1082#1072
     Font.Charset = DEFAULT_CHARSET
     Font.Color = clWindowText
     Font.Height = -16
@@ -1460,6 +1543,7 @@ object Form1: TForm1
     Font.Style = [fsBold]
     ParentFont = False
     TabOrder = 8
+    OnClick = prTestButtonClick
   end
   object TimerOutToDia: TTimer
     Enabled = False
@@ -1653,5 +1737,19 @@ object Form1: TForm1
     OnTimer = tmrTestSazTimer
     Left = 1448
     Top = 136
+  end
+  object tmrPrTest: TTimer
+    Enabled = False
+    Interval = 100
+    OnTimer = tmrPrTestTimer
+    Left = 1504
+    Top = 104
+  end
+  object tmrStartTestPr: TTimer
+    Enabled = False
+    Interval = 10000
+    OnTimer = tmrStartTestPrTimer
+    Left = 1472
+    Top = 104
   end
 end
