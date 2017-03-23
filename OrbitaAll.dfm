@@ -1,11 +1,11 @@
 object Form1: TForm1
-  Left = 235
-  Top = 205
+  Left = 189
+  Top = 324
   BorderIcons = [biSystemMenu]
   BorderStyle = bsSingle
   Caption = #1055#1088#1086#1074#1077#1088#1082#1072' '#1089#1080#1089#1090#1077#1084#1099' '#1054#1088#1073#1080#1090#1072
   ClientHeight = 681
-  ClientWidth = 1542
+  ClientWidth = 1667
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -181,7 +181,7 @@ object Form1: TForm1
     Top = 0
     Width = 903
     Height = 593
-    ActivePage = TabSheet2
+    ActivePage = achx
     TabOrder = 0
     object TabSheet1: TTabSheet
       Caption = #1052#1077#1076#1083'.'
@@ -1462,6 +1462,7 @@ object Form1: TForm1
     ParentFont = False
     TabOrder = 8
     WordWrap = True
+    OnClick = prTestButtonClick
   end
   object TimerOutToDia: TTimer
     Enabled = False
@@ -1655,5 +1656,18 @@ object Form1: TForm1
     OnTimer = tmrTestSazTimer
     Left = 1448
     Top = 136
+  end
+  object tmrTestMKT3Pres: TTimer
+    Enabled = False
+    Interval = 100
+    OnTimer = tmrTestMKT3PresTimer
+    Left = 1560
+    Top = 64
+  end
+  object tmrTestMKT3Comp: TTimer
+    Enabled = False
+    Interval = 100
+    Left = 1560
+    Top = 88
   end
 end

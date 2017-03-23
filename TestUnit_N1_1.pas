@@ -250,6 +250,24 @@ var
     'M16П1A40B20C11T21'
   );
 
+  testStringsMKB2_1_4_1:array[1..24] of string=
+  (
+    'M16П2A11B11T22P01','M16П2A11B11T22P02','M16П2A11B21T22P01','M16П2A11B21T22P02',
+    'M16П2A11B31T22P01','M16П2A11B31T22P02','M16П2A11B41T22P01','M16П2A11B41T22P02',
+    'M16П2A21B11T22P01','M16П2A21B11T22P02','M16П2A21B21T22P01','M16П2A21B21T22P02',
+    'M16П2A21B31T22P01','M16П2A21B31T22P02','M16П2A21B41T22P01','M16П2A21B41T22P02',
+    'M16П2A70B20C11T21','M16П2A70B20C21T21','M16П2A70B20C31T21','M16П2A70B20C41T21',
+    'M16П2A70B31C11T21','M16П2A70B31C21T21','M16П2A70B31C31T21','M16П2A70B31C41T21'
+  );
+
+  testStringsMKB2_1_4_2:array[1..16] of string=
+  (
+    'M16П2A70B40C11T21','M16П2A70B40C21T21','M16П2A70B40C31T21','M16П2A70B40C41T21',
+    'M16П2A70B60C11T21','M16П2A70B60C21T21','M16П2A70B60C31T21','M16П2A70B60C41T21',
+    'M16П2A70B11C11T21','M16П2A70B11C21T21','M16П2A70B11C31T21','M16П2A70B11C41T21',
+    'M16П2A70B80C11T21','M16П2A70B80C21T21','M16П2A70B80C31T21','M16П2A70B80C41T21'
+  );
+
   arrTestMPIUParam:array[1..NUM_TESTVALMPIU] of TTestMPIUElem;
 
   
@@ -599,6 +617,9 @@ var
 
   flagMKBEnd:Boolean=false;
 
+  flagMKBEndN1_4_1:Boolean=False;
+  flagMKBEndN1_4_2:Boolean=False;
+
   //флаг успешности наличия приборов
   flagTestDev:Boolean=true;
 
@@ -681,7 +702,11 @@ var
   procedure SendCommandToISD(str:string);
   function testColibr:Boolean;
   function testCompens(testVal:integer; dVal:integer; colibMin:integer; colibMax:integer; colibMinOm:Integer; colibMaxOm:Integer):boolean;
-  procedure TestMKB2;
+  procedure testMKT3Sys;
+  procedure testMKB2;
+  procedure testMKB2_N1_1;
+  procedure testMKB2_N1_4_1;
+  procedure testMKB2_N1_4_2;
   procedure testVpMKB2();
   function getVoltmetrValue(m_instr_usbtmc:Cardinal):double;
   procedure setFrequencyOnGenerator(freq:real;ampl:real;m_instr_usbtmc:cardinal);
@@ -689,8 +714,10 @@ var
   procedure setValOnCh(modZU:Integer);
   procedure testZU;
   procedure testMPIU;
+  procedure testMPIUSys;
   procedure testSazPr;
-  procedure TestMKT3;
+  procedure testMKT3;
+  procedure testACHX;
   procedure generatorOutOn(m_instr_usbtmc:cardinal);
   function SendCommandToPowerSupply(NumberPowerSupply:integer;Command:string):byte;
 implementation
@@ -1467,12 +1494,30 @@ begin
       end;
     end;
 
-    14: 
+    14:
     begin
       numTestMPIUch:=Length(testStringsSAZ);
       for i:=1 to numTestMPIUch do
       begin
         form1.OrbitaAddresMemo.Lines.Add(testStringsSAZ[i]);
+      end;
+    end;
+
+    15:
+    begin
+      numTestMPIUch:=Length(testStringsMKB2_1_4_1);
+      for i:=1 to numTestMPIUch do
+      begin
+        form1.OrbitaAddresMemo.Lines.Add(testStringsMKB2_1_4_1[i]);
+      end;
+    end;
+
+    16:
+    begin
+      numTestMPIUch:=Length(testStringsMKB2_1_4_2);
+      for i:=1 to numTestMPIUch do
+      begin
+        form1.OrbitaAddresMemo.Lines.Add(testStringsMKB2_1_4_2[i]);
       end;
     end;
 
@@ -2384,8 +2429,163 @@ begin
 end;
 //=============================================================
 
+//=============================================================
+// Проверка МПИУ в составе системы
+//=============================================================
+procedure testMPIUSys;
+var
+  testProgramm:integer;
+  i:Integer;
+  bool:Boolean;
+
+  flagMPIU31:Boolean;
+  flagMPIU41:Boolean;
+  flagMPIU32:Boolean;
+
+  ret:integer;
+begin
+  flagMPIU31:=true;
+  flagMPIU41:=true;
+  flagMPIU32:=true;
+
+  //вручную выставим программу опроса
+  testProgramm:=1;
+  Form1.mmoTestResult.Lines.Add('ПРОВЕРКА МПИУ');
+  Form1.mmoTestResult.Lines.Add('');
+  //проверка по адресам Т21
+  form1.PageControl1.ActivePageIndex:=1;
+  if (testProgramm=1) then
+  begin
+    //1 программа опроса
+    //31
+    Form1.mmoTestResult.Lines.Add('ПРОВЕРКА МПИУ 31');
+    Form1.mmoTestResult.Lines.Add('');
+    //M16П1A20B20C12T21 {A=4 ПА=1}, M16П1A20B40T21 {A=4 ПА=2}
+    adrTestNum:=11;
+    //выставялем адреса
+    testNeedsAdrF;
+    //заполним параметры адресов в массив параметров адресов
+    FillAdressParam;
+
+    iTestMPIUArr:=1;
+    graphFlagFastP := true; //вкл вывод всех изменений параметра
+    form1.tmrTestMPIU.enabled:=True;
+
+    while ((iTestMPIUArr<>NUM_TESTVALMPIU+1)and( not isTestCloseFl)) do
+    begin
+      Application.ProcessMessages;
+    end;
+
+    graphFlagFastP := false;//выкл вывод всех изменений параметра
+
+
+    bool:=True;
+    for i:=1 to NUM_TESTVALMPIU do
+    begin
+      if ((arrTestMPIUParam[i].aAdr<>arrTestMPIUParamConstMPIU31[i].aAdr)or
+          (arrTestMPIUParam[i].paAdr<>arrTestMPIUParamConstMPIU31[i].paAdr)) then
+      begin
+        bool:=false;
+        Break;
+      end;
+
+      if (not isTestCloseFl) then
+      begin
+        Break;
+      end;
+    end;
+
+    if (bool) then
+    begin
+      Form1.mmoTestResult.Lines.Add('Проверка приема данных с прибора МПИУ31: НОРМА');
+    end
+    else
+    begin
+      flagMPIU31:=false;
+      Form1.mmoTestResult.Lines.Add('Проверка приема данных с прибора МПИУ31: !!! НЕ НОРМА !!!');
+      allTestFlag:=False;
+    end;
+    Form1.mmoTestResult.Lines.Add('');
+    testMpiuFlag:=false;
+
+    //перестыковка 31_X2,31_X3 на 41_X2,41_X3
+    ret :=Application.MessageBox(PAnsiChar('Перестыкуйте на адаптере кабели 31_X2,31_X3 на кабели 41_X2,41_X3 и нажмите ОК для продолжения проверки'),PAnsiChar('Перестыковка кабелей'), MB_OK+MB_ICONWARNING);
+    if ret=IDOK then
+    begin
+        //41
+      Form1.mmoTestResult.Lines.Add('ПРОВЕРКА МПИУ 41');
+      Form1.mmoTestResult.Lines.Add('');
+      //M16П2A50B20T21 {A=7 ПА=1}, M16П2A50B30T21 {A=7 ПА=2}
+      adrTestNum:=12;
+      //выставялем адреса
+      testNeedsAdrF;
+      //заполним параметры адресов в массив параметров адресов
+      FillAdressParam;
+      
+      iTestMPIUArr:=1;
+      graphFlagFastP := true; //вкл вывод всех изменений параметра
+      form1.tmrTestMPIU.enabled:=True;
+      while ((iTestMPIUArr<>NUM_TESTVALMPIU+1)and( not isTestCloseFl)) do
+      begin
+        Application.ProcessMessages;
+      end;
+      graphFlagFastP := false; //вкл вывод всех изменений параметра
+
+      bool:=True;
+      for i:=1 to NUM_TESTVALMPIU do
+      begin
+        if ((arrTestMPIUParam[i].aAdr<>arrTestMPIUParamConstMPIU41[i].aAdr)or
+            (arrTestMPIUParam[i].paAdr<>arrTestMPIUParamConstMPIU41[i].paAdr)) then
+        begin
+          bool:=false;
+          Break;
+        end;
+
+        if (isTestCloseFl) then
+        begin
+          Break;
+        end;
+      end;
+
+      if (bool) then
+      begin
+        Form1.mmoTestResult.Lines.Add('Проверка приема данных с прибора МПИУ41: НОРМА');
+      end
+      else
+      begin
+        flagMPIU41:=false;
+        Form1.mmoTestResult.Lines.Add('Проверка приема данных с прибора МПИУ41: !!! НЕ НОРМА !!!');
+        allTestFlag:=False;
+      end;
+      Form1.mmoTestResult.Lines.Add('');
+      testMpiuFlag:=false;
+
+      //перестыковка 41_X2,41_X3 на 31_X2,31_X3
+      ret :=Application.MessageBox(PAnsiChar('Перестыкуйте на адаптере кабели 41_X2,41_X3 на кабели 31_X2,31_X3 и нажмите ОК для продолжения проверки'),PAnsiChar('Перестыковка кабелей'), MB_OK);
+      if ret=IDOK then
+      begin
+        testMpiuFlag:=false;
+        Form1.mmoTestResult.Lines.Add('');
+        //проверяем все ли проверки были пройдены
+        if (flagMPIU31 and flagMPIU41) then
+        begin
+          Form1.mmoTestResult.Lines.Add('Проверка приема данных с прибора МПИУ: НОРМА');
+        end
+        else
+        begin
+          Form1.mmoTestResult.Lines.Add('Проверка приема данных с прибора МПИУ: !!! НЕ НОРМА !!!');
+          allTestFlag:=False;
+        end;
+        Form1.mmoTestResult.Lines.Add('');
+        Form1.fastGist.Series[0].Clear;
+      end; 
+    end;
+  end;
+end;
+//=============================================================
+
 //============================================================
-//
+//Проверка МПИУ в составе модуля N1-1
 //============================================================
 procedure testMPIU;
 var
@@ -2555,7 +2755,7 @@ begin
 
         //перестыковка 32_X2,32_X3 на 31_X2,31_X3
         ret :=Application.MessageBox(PAnsiChar('Перестыкуйте на адаптере кабели 32_X2,41_X3 на кабели 31_X2,32_X3 и нажмите ОК для продолжения проверки'),PAnsiChar('Перестыковка кабелей'), MB_OK);
-        
+
         if (bool) then
         begin
           Form1.mmoTestResult.Lines.Add('Проверка приема данных с прибора МПИУ32: НОРМА');
@@ -2737,11 +2937,85 @@ end;
 //=============================================================
 
 
+//=============================================================
+//Проверка МКТ3(N1-1) в составе системы
+//=============================================================
+procedure testMKT3Sys;
+begin
+  //проверка МКТ3
+  form1.PageControl1.ActivePageIndex:=2;
+  //установка флага что надо собирать колибровки
+  startTestBlock:=true;
+  //устанавливаем пакет адресов для проверки МКТ3(N1-1) в составе системы
+  adrTestNum:=2;
+  //выставялем адреса МКТ3
+  testNeedsAdrF;
+  //заполним параметры адресов в массив параметров адресов
+  FillAdressParam;
 
-//============================================================
-//
-//============================================================
-procedure TestMKT3;
+  Form1.mmoTestResult.Lines.Add('ПРОВЕРКА ПУНКТА 1.1.10.2 ТУ ЯГАИ.468157.116'+
+    '(МЕТРОЛОГИЧЕСКИЕ ХАРАКТЕРИСТИКИ ДЛЯ КАНАЛОВ ТМП(ПРИБОР МКТ3)).');
+  Form1.mmoTestResult.Lines.Add('');
+  Form1.mmoTestResult.Lines.Add('ПРОВЕРКА ПУНКТА 1.1.10.2 ТУ ЯГАИ.468157.116'+
+    '(ПРОВЕРКА ПЕРЕДАЧИ НА МЕСТЕ ПЕРВОГО КАНАЛА КАЛИБРОВОЧНЫХ СИГНАЛОВ).');
+
+  //ждем пока заполним калибровки
+  while ((not startTest_1_1_10_2) and( not isTestCloseFl)) do
+  begin
+    Application.ProcessMessages;
+  end;
+
+  //проверка калибровок на правильность
+  if (testColibr) then
+  begin
+    Form1.mmoTestResult.Lines.Add('ПРОВЕРКА ПУНКТА 1.1.10.2 ТУ ЯГАИ.468157.116 (ПРОВЕРКА ПЕРЕДАЧИ КАЛИБРОВОК): НОРМА.');
+  end
+  else
+  begin
+    Form1.mmoTestResult.Lines.Add('ПРОВЕРКА ПУНКТА 1.1.10.2 ТУ ЯГАИ.468157.116 (ПРОВЕРКА ПЕРЕДАЧИ КАЛИБРОВОК): !!! НЕ НОРМА !!!');
+    allTestFlag:=False;
+  end;
+  Form1.mmoTestResult.Lines.Add('');
+  startTest_1_1_10_2:=False;
+
+  //ждем пока заполним калибровки снова
+  while ((not startTest_1_1_10_2)and( not isTestCloseFl)) do
+  begin
+    Application.ProcessMessages;
+  end;
+
+  //запуск проверки погрешностей измерений МКТ3 в системе
+  //Form1.tmr1_1_10_2.Enabled:=true;
+  form1.tmrTestMKT3Pres.Enabled:=true;
+
+  //ждем пока закончим проверку
+  while ((form1.tmrTestMKT3Pres.Enabled)and(not isTestCloseFl)) do
+  begin
+    Application.ProcessMessages;
+  end;
+
+  //ждем пока заполним калибровки снова
+  while ((not startTest_1_1_10_2) and (not isTestCloseFl)) do
+  begin
+    Application.ProcessMessages;
+  end;
+
+  //запуск проверки компенсации начальных сопротивлений МКТ3
+  //Form1.tmrRCo.Enabled:=True;
+  Form1.tmrTestMKT3Comp.Enabled:=True;
+
+  //ждем пока закончим проверку компенсации
+  while ((Form1.tmrTestMKT3Comp.Enabled)and(not isTestCloseFl)) do
+  begin
+    Application.ProcessMessages;
+  end;
+end;
+//=============================================================
+
+//=============================================================
+//Проверка MKT3 в составе модуля N1-1
+//=============================================================
+procedure testMKT3;
 begin  
   //проверка МКТ3
   form1.PageControl1.ActivePageIndex:=2;
@@ -2789,7 +3063,7 @@ begin
   Form1.tmr1_1_10_2.Enabled:=true;
 
   //ждем пока закончим проверку
-  while ((Form1.tmr1_1_10_2.Enabled)and( not isTestCloseFl)) do
+  while ((Form1.tmr1_1_10_2.Enabled)and(not isTestCloseFl)) do
   begin
     Application.ProcessMessages;
   end;
@@ -2812,233 +3086,24 @@ begin
     Application.ProcessMessages;
   end;
 
-  //завершение проверки МКТ3  
+  //завершение проверки МКТ3
 end;
 //============================================================
 
-
-
-//===========================================================
-//Проверка прибора МКБ2
-//===========================================================
-procedure TestMKB2;
+//============================================================
+//Проверка АЧХ
+//============================================================
+procedure testACHX;
 var
+  rezFlagTestF:boolean;
   chNum:Integer;
-  i:Integer;
-  k:Integer;
+  freqNum:Integer;
   voltmetrValue:double;
   parazit:double;
-  amplsr:Double;
-  rky:Double;
-
+  i:Integer;
   N:array[1..12] of real;
-
-  freqNum:Integer;
-  rezFlagTestF:boolean;
-
+  amplsr:Double;
 begin
-  rezFlag:=True;
-  setConf(m_instr_usbtmc_1[0],'CONF:VOLT:AC 10');
-  generatorOutOn(m_instr_usbtmc_2[1]);
-
-  //=== переключим заранее исд, генератор, фольтметр для верного измерения 1 канала
-  sendCommandToISD('http://'+ISDip_2+'/type=1num=33val=820work=0');
-  sendCommandToISD('http://'+ISDip_2+'/type=3num=33val=1');
-  sendCommandToISD('http://'+ISDip_2+'/type=2num=58val=1');
-  sendCommandToISD('http://'+ISDip_2+'/type=2num=31val=1');
-  //setcoefU(1,chNum);
-  sendCommandToISD('http://'+ISDip_2+'/type=2num=53val=1');
-  setFrequencyOnGenerator(20,6,m_instr_usbtmc_2[1]);
-  sleep(1000);
-  voltmetrValue:=getVoltmetrValue(m_instr_usbtmc_1[0]);
-  sleep(1000);
-
-  //===
-  form1.mmoTestResult.lines.add('ПРОВЕРКА ПУНКТА 1.2.1 ТУ ЯГАИ.468363.026 (ПРОВЕРКА МЕТРОЛОГИЧЕСКИХ ХАРАКТЕРИСТИК ВИБРАЦИОННЫХ УСИЛИТЕЛЕЙ)');
-  form1.mmoTestResult.lines.add('');
-  for chNum:=1 to 4 do  //1
-  begin
-    if (isTestCloseFl) then
-    begin
-      Break;
-    end;
-
-    //Form1.mmoTestResult.Lines.Add('');
-    form1.mmoTestResult.lines.add('Проверка усиления '+IntToStr(chNum)+' канала');
-    case chNum of
-      1:
-      begin
-        sendCommandToISD('http://'+ISDip_2+'/type=1num=33val=820work=0');
-        sendCommandToISD('http://'+ISDip_2+'/type=3num=33val=1');
-        sendCommandToISD('http://'+ISDip_2+'/type=2num=58val=1');
-        sendCommandToISD('http://'+ISDip_2+'/type=2num=31val=1');
-        //setcoefU(1,chNum);
-        sendCommandToISD('http://'+ISDip_2+'/type=2num=53val=1');
-      end;
-      2:
-      begin
-        SendCommandToISD('http://'+ISDip_2+'/type=3num=33val=0');
-        SendCommandToISD('http://'+ISDip_2+'/type=2num=53val=0');
-        SendCommandToISD('http://'+ISDip_2+'/type=2num=31val=0');
-
-        SendCommandToISD('http://'+ISDip_2+'/type=1num=34val=820work=0');
-        SendCommandToISD('http://'+ISDip_2+'/type=3num=34val=1');
-        SendCommandToISD('http://'+ISDip_2+'/type=2num=38val=1');
-        //SetcoefU(1,chNum);
-        SendCommandToISD('http://'+ISDip_2+'/type=2num=54val=1');
-      end;
-      3:
-      begin
-        SendCommandToISD('http://'+ISDip_2+'/type=3num=34val=0');
-        SendCommandToISD('http://'+ISDip_2+'/type=2num=54val=0');
-        SendCommandToISD('http://'+ISDip_2+'/type=2num=38val=0');
-
-        SendCommandToISD('http://'+ISDip_2+'/type=1num=35val=820work=0');
-        SendCommandToISD('http://'+ISDip_2+'/type=3num=35val=1');
-        SendCommandToISD('http://'+ISDip_2+'/type=2num=45val=1');
-        //SetcoefU(1,chNum);
-        SendCommandToISD('http://'+ISDip_2+'/type=2num=55val=1');
-      end;
-      4:
-      begin
-        SendCommandToISD('http://'+ISDip_2+'/type=3num=35val=0');
-        SendCommandToISD('http://'+ISDip_2+'/type=2num=55val=0');
-        SendCommandToISD('http://'+ISDip_2+'/type=2num=45val=0');
-
-        SendCommandToISD('http://'+ISDip_2+'/type=1num=36val=820work=0');
-        SendCommandToISD('http://'+ISDip_2+'/type=3num=36val=1');
-        SendCommandToISD('http://'+ISDip_2+'/type=2num=64val=1');
-        //SetcoefU(1,chNum);
-        SendCommandToISD('http://'+ISDip_2+'/type=2num=56val=1');
-      end;
-    end;
-
-    //для каждого канала проверяем его на всех кэф усиления
-    For i:=1 to 1 do   // 8 проверяем все кэфы усиления . 1 проверяем на всех каналах только 1 коэф усиления
-    begin
-      case i of
-        1:
-        begin
-          k:=1;
-          setFrequencyOnGenerator(20,6,m_instr_usbtmc_2[1]);
-        end;
-        2:
-        begin
-          k:=2;
-          SetFrequencyOnGenerator(20,3,m_instr_usbtmc_2[1]);
-        end;
-        3:
-        begin
-          k:=4;
-          SetFrequencyOnGenerator(20,1.5,m_instr_usbtmc_2[1]);
-        end;
-        4:
-        begin
-          k:=8;
-          SetFrequencyOnGenerator(20,0.75,m_instr_usbtmc_2[1]);
-        end;
-        5:
-        begin
-          k:=16;
-          SetFrequencyOnGenerator(20,0.375,m_instr_usbtmc_2[1]);
-        end;
-        6:
-        begin
-          k:=32;
-          SetFrequencyOnGenerator(20,0.1875,m_instr_usbtmc_2[1]);
-        end;
-        7:
-        begin
-          k:=64;
-          SetFrequencyOnGenerator(20,0.0937,m_instr_usbtmc_2[1]);
-        end;
-        8:
-        begin
-          k:=128;
-          SetFrequencyOnGenerator(20,0.0468,m_instr_usbtmc_2[1]);
-        end;
-      end;
-
-      if (isTestCloseFl) then
-      begin
-        Break;
-      end;
-
-
-      //
-      setcoefU(k,chNum);
-
-      sleep(1000);
-      voltmetrValue:=getVoltmetrValue(m_instr_usbtmc_1[0]);
-      sleep(1000);
-      rky:=1+((VoltmetrValue)*sqrt(2)-3)/6;
-      //rky:=(VoltmetrValue)/(4/(k*sqrt(2)));
-      if (rky>0.95)and(rky<1.05) then
-      begin
-        Form1.mmoTestResult.Lines.Add('Проверка усиления х'+intTostr(k)+' НОРМА: '+FloatToStrF(rky*k,fffixed,5,2))
-      end
-      else
-      begin
-        voltmetrValue:=GetVoltmetrValue(m_instr_usbtmc_1[0]);
-        sleep(1000);
-        rky:=1+((VoltmetrValue)*sqrt(2)-3)/6;
-        if (rky>0.95)and(rky<1.05) then
-        begin
-          Form1.mmoTestResult.Lines.Add('Проверка усиления х'+intTostr(k)+' НОРМА: '+FloatToStrF(rky*k,fffixed,5,2))
-        end
-        else
-        begin
-          VoltmetrValue:=GetVoltmetrValue(m_instr_usbtmc_1[0]);
-          sleep(1000);
-          rky:=1+((VoltmetrValue)*sqrt(2)-3)/6;
-          if (rky>0.95)and(rky<1.05) then
-          begin
-            Form1.mmoTestResult.Lines.Add('Проверка усиления х'+intTostr(k)+' НОРМА: '+FloatToStrF(rky*k,fffixed,5,2))
-          end
-          else
-          begin
-            VoltmetrValue:=GetVoltmetrValue(m_instr_usbtmc_1[0]);
-            sleep(1000);
-            rky:=1+((VoltmetrValue)*sqrt(2)-3)/6;
-            if (rky>0.95)and(rky<1.05) then
-            begin
-              Form1.mmoTestResult.Lines.Add('Проверка усиления х'+intTostr(k)+'  НОРМА: '+FloatToStrF(rky*k,fffixed,5,2))
-            end
-            else
-            begin
-              Form1.mmoTestResult.Lines.Add('Проверка усиления х'+intTostr(k)+' !!! НЕ НОРМА !!! '+FloatToStrF(rky*k,fffixed,5,2));
-              //DeviceTestRezultFlag:=false;
-              //RezultFlag3:=false;
-              //RezultFlag1:=false;
-              rezFlag:=False;
-            end;
-          end;
-        end;
-      end;
-    //
-    end;
-  end;
-
-  SendCommandToISD('http://'+ISDip_2+'/type=3num=36val=0');
-  SendCommandToISD('http://'+ISDip_2+'/type=2num=56val=0');
-  SendCommandToISD('http://'+ISDip_2+'/type=2num=58val=0');
-  SendCommandToISD('http://'+ISDip_2+'/type=2num=64val=0');
-  SetConf(m_instr_usbtmc_1[0],'CONF:VOLT:AC 10');
-
-  Form1.mmoTestResult.Lines.Add('');
-  if (rezFlag) then
-  begin
-    Form1.mmoTestResult.lines.add('ПРОВЕРКА ПУНКТА 1.2.1 ТУ ЯГАИ.468363.026 (ПРОВЕРКА МЕТРОЛОГИЧЕСКИХ ХАРАКТЕРИСТИК ВИБРАЦИОННЫХ УСИЛИТЕЛЕЙ): НОРМА');
-  end
-  else
-  begin
-    Form1.mmoTestResult.lines.add('ПРОВЕРКА ПУНКТА 1.2.1 ТУ ЯГАИ.468363.026 (ПРОВЕРКА МЕТРОЛОГИЧЕСКИХ ХАРАКТЕРИСТИК ВИБРАЦИОННЫХ УСИЛИТЕЛЕЙ): !!! HE НОРМА !!!');
-  end; 
-  Form1.mmoTestResult.Lines.Add('');
-  //------------
-
-
-
   rezFlag:=True;
   rezFlagTestF:=true;
   form1.mmoTestResult.Lines.Add('ПОСТРОЕНИЕ АЧХ');
@@ -3577,6 +3642,796 @@ begin
   SendCommandToISD('http://'+ISDip_2+'/type=2num=62val=0');
   SendCommandToISD('http://'+ISDip_2+'/type=2num=63val=0');
   SendCommandToISD('http://'+ISDip_2+'/type=3num=36val=0');
+end;
+//============================================================
+
+//===========================================================
+//Проверка прибора МКБ2(N1-1) при проверке в составе системы
+//===========================================================
+procedure testMKB2_N1_1;
+begin
+  //буфер с данными МКБ2 DataMKB
+end;
+//===========================================================
+
+//===========================================================
+//Проверка прибора МКБ2(N1-4) №1 при проверке в составе системы (24 канала)
+//===========================================================
+procedure testMKB2_N1_4_1;
+begin
+  //буфер с данными МКБ2 DataMKB
+end;
+//===========================================================
+
+//===========================================================
+//Проверка прибора МКБ2(N1-4) №2 при проверке в составе системы (16 каналов)
+//===========================================================
+procedure testMKB2_N1_4_2;
+begin
+  //буфер с данными МКБ2 DataMKB
+end;
+//===========================================================
+
+//===========================================================
+//Проверка прибора МКБ2(N1-1) при проверке модуля
+//===========================================================
+procedure testMKB2;
+var
+  chNum:Integer;
+  i:Integer;
+  k:Integer;
+  voltmetrValue:double;
+  //parazit:double;
+  //amplsr:Double;
+  rky:Double;
+
+  //N:array[1..12] of real;
+
+  //freqNum:Integer;
+  //rezFlagTestF:boolean;
+
+begin
+  rezFlag:=True;
+  setConf(m_instr_usbtmc_1[0],'CONF:VOLT:AC 10');
+  generatorOutOn(m_instr_usbtmc_2[1]);
+
+  //=== переключим заранее исд, генератор, фольтметр для верного измерения 1 канала
+  sendCommandToISD('http://'+ISDip_2+'/type=1num=33val=820work=0');
+  sendCommandToISD('http://'+ISDip_2+'/type=3num=33val=1');
+  sendCommandToISD('http://'+ISDip_2+'/type=2num=58val=1');
+  sendCommandToISD('http://'+ISDip_2+'/type=2num=31val=1');
+  //setcoefU(1,chNum);
+  sendCommandToISD('http://'+ISDip_2+'/type=2num=53val=1');
+  setFrequencyOnGenerator(20,6,m_instr_usbtmc_2[1]);
+  sleep(1000);
+  voltmetrValue:=getVoltmetrValue(m_instr_usbtmc_1[0]);
+  sleep(1000);
+
+  //===
+  form1.mmoTestResult.lines.add('ПРОВЕРКА ПУНКТА 1.2.1 ТУ ЯГАИ.468363.026 (ПРОВЕРКА МЕТРОЛОГИЧЕСКИХ ХАРАКТЕРИСТИК ВИБРАЦИОННЫХ УСИЛИТЕЛЕЙ)');
+  form1.mmoTestResult.lines.add('');
+  for chNum:=1 to 4 do  //1
+  begin
+    if (isTestCloseFl) then
+    begin
+      Break;
+    end;
+
+    //Form1.mmoTestResult.Lines.Add('');
+    form1.mmoTestResult.lines.add('Проверка усиления '+IntToStr(chNum)+' канала');
+    case chNum of
+      1:
+      begin
+        sendCommandToISD('http://'+ISDip_2+'/type=1num=33val=820work=0');
+        sendCommandToISD('http://'+ISDip_2+'/type=3num=33val=1');
+        sendCommandToISD('http://'+ISDip_2+'/type=2num=58val=1');
+        sendCommandToISD('http://'+ISDip_2+'/type=2num=31val=1');
+        //setcoefU(1,chNum);
+        sendCommandToISD('http://'+ISDip_2+'/type=2num=53val=1');
+      end;
+      2:
+      begin
+        SendCommandToISD('http://'+ISDip_2+'/type=3num=33val=0');
+        SendCommandToISD('http://'+ISDip_2+'/type=2num=53val=0');
+        SendCommandToISD('http://'+ISDip_2+'/type=2num=31val=0');
+
+        SendCommandToISD('http://'+ISDip_2+'/type=1num=34val=820work=0');
+        SendCommandToISD('http://'+ISDip_2+'/type=3num=34val=1');
+        SendCommandToISD('http://'+ISDip_2+'/type=2num=38val=1');
+        //SetcoefU(1,chNum);
+        SendCommandToISD('http://'+ISDip_2+'/type=2num=54val=1');
+      end;
+      3:
+      begin
+        SendCommandToISD('http://'+ISDip_2+'/type=3num=34val=0');
+        SendCommandToISD('http://'+ISDip_2+'/type=2num=54val=0');
+        SendCommandToISD('http://'+ISDip_2+'/type=2num=38val=0');
+
+        SendCommandToISD('http://'+ISDip_2+'/type=1num=35val=820work=0');
+        SendCommandToISD('http://'+ISDip_2+'/type=3num=35val=1');
+        SendCommandToISD('http://'+ISDip_2+'/type=2num=45val=1');
+        //SetcoefU(1,chNum);
+        SendCommandToISD('http://'+ISDip_2+'/type=2num=55val=1');
+      end;
+      4:
+      begin
+        SendCommandToISD('http://'+ISDip_2+'/type=3num=35val=0');
+        SendCommandToISD('http://'+ISDip_2+'/type=2num=55val=0');
+        SendCommandToISD('http://'+ISDip_2+'/type=2num=45val=0');
+
+        SendCommandToISD('http://'+ISDip_2+'/type=1num=36val=820work=0');
+        SendCommandToISD('http://'+ISDip_2+'/type=3num=36val=1');
+        SendCommandToISD('http://'+ISDip_2+'/type=2num=64val=1');
+        //SetcoefU(1,chNum);
+        SendCommandToISD('http://'+ISDip_2+'/type=2num=56val=1');
+      end;
+    end;
+
+    //для каждого канала проверяем его на всех кэф усиления
+    For i:=1 to 1 do   // 8 проверяем все кэфы усиления . 1 проверяем на всех каналах только 1 коэф усиления
+    begin
+      case i of
+        1:
+        begin
+          k:=1;
+          setFrequencyOnGenerator(20,6,m_instr_usbtmc_2[1]);
+        end;
+        2:
+        begin
+          k:=2;
+          SetFrequencyOnGenerator(20,3,m_instr_usbtmc_2[1]);
+        end;
+        3:
+        begin
+          k:=4;
+          SetFrequencyOnGenerator(20,1.5,m_instr_usbtmc_2[1]);
+        end;
+        4:
+        begin
+          k:=8;
+          SetFrequencyOnGenerator(20,0.75,m_instr_usbtmc_2[1]);
+        end;
+        5:
+        begin
+          k:=16;
+          SetFrequencyOnGenerator(20,0.375,m_instr_usbtmc_2[1]);
+        end;
+        6:
+        begin
+          k:=32;
+          SetFrequencyOnGenerator(20,0.1875,m_instr_usbtmc_2[1]);
+        end;
+        7:
+        begin
+          k:=64;
+          SetFrequencyOnGenerator(20,0.0937,m_instr_usbtmc_2[1]);
+        end;
+        8:
+        begin
+          k:=128;
+          SetFrequencyOnGenerator(20,0.0468,m_instr_usbtmc_2[1]);
+        end;
+      end;
+
+      if (isTestCloseFl) then
+      begin
+        Break;
+      end;
+
+
+      //
+      setcoefU(k,chNum);
+
+      sleep(1000);
+      voltmetrValue:=getVoltmetrValue(m_instr_usbtmc_1[0]);
+      sleep(1000);
+      rky:=1+((VoltmetrValue)*sqrt(2)-3)/6;
+      //rky:=(VoltmetrValue)/(4/(k*sqrt(2)));
+      if (rky>0.95)and(rky<1.05) then
+      begin
+        Form1.mmoTestResult.Lines.Add('Проверка усиления х'+intTostr(k)+' НОРМА: '+FloatToStrF(rky*k,fffixed,5,2))
+      end
+      else
+      begin
+        voltmetrValue:=GetVoltmetrValue(m_instr_usbtmc_1[0]);
+        sleep(1000);
+        rky:=1+((VoltmetrValue)*sqrt(2)-3)/6;
+        if (rky>0.95)and(rky<1.05) then
+        begin
+          Form1.mmoTestResult.Lines.Add('Проверка усиления х'+intTostr(k)+' НОРМА: '+FloatToStrF(rky*k,fffixed,5,2))
+        end
+        else
+        begin
+          VoltmetrValue:=GetVoltmetrValue(m_instr_usbtmc_1[0]);
+          sleep(1000);
+          rky:=1+((VoltmetrValue)*sqrt(2)-3)/6;
+          if (rky>0.95)and(rky<1.05) then
+          begin
+            Form1.mmoTestResult.Lines.Add('Проверка усиления х'+intTostr(k)+' НОРМА: '+FloatToStrF(rky*k,fffixed,5,2))
+          end
+          else
+          begin
+            VoltmetrValue:=GetVoltmetrValue(m_instr_usbtmc_1[0]);
+            sleep(1000);
+            rky:=1+((VoltmetrValue)*sqrt(2)-3)/6;
+            if (rky>0.95)and(rky<1.05) then
+            begin
+              Form1.mmoTestResult.Lines.Add('Проверка усиления х'+intTostr(k)+'  НОРМА: '+FloatToStrF(rky*k,fffixed,5,2))
+            end
+            else
+            begin
+              Form1.mmoTestResult.Lines.Add('Проверка усиления х'+intTostr(k)+' !!! НЕ НОРМА !!! '+FloatToStrF(rky*k,fffixed,5,2));
+              //DeviceTestRezultFlag:=false;
+              //RezultFlag3:=false;
+              //RezultFlag1:=false;
+              rezFlag:=False;
+            end;
+          end;
+        end;
+      end;
+    //
+    end;
+  end;
+
+  SendCommandToISD('http://'+ISDip_2+'/type=3num=36val=0');
+  SendCommandToISD('http://'+ISDip_2+'/type=2num=56val=0');
+  SendCommandToISD('http://'+ISDip_2+'/type=2num=58val=0');
+  SendCommandToISD('http://'+ISDip_2+'/type=2num=64val=0');
+  SetConf(m_instr_usbtmc_1[0],'CONF:VOLT:AC 10');
+
+  Form1.mmoTestResult.Lines.Add('');
+  if (rezFlag) then
+  begin
+    Form1.mmoTestResult.lines.add('ПРОВЕРКА ПУНКТА 1.2.1 ТУ ЯГАИ.468363.026 (ПРОВЕРКА МЕТРОЛОГИЧЕСКИХ ХАРАКТЕРИСТИК ВИБРАЦИОННЫХ УСИЛИТЕЛЕЙ): НОРМА');
+  end
+  else
+  begin
+    Form1.mmoTestResult.lines.add('ПРОВЕРКА ПУНКТА 1.2.1 ТУ ЯГАИ.468363.026 (ПРОВЕРКА МЕТРОЛОГИЧЕСКИХ ХАРАКТЕРИСТИК ВИБРАЦИОННЫХ УСИЛИТЕЛЕЙ): !!! HE НОРМА !!!');
+  end;
+  Form1.mmoTestResult.Lines.Add('');
+  //------------
+
+  //проверка АЧХ
+  testACHX;
+
+//  rezFlag:=True;
+//  rezFlagTestF:=true;
+//  form1.mmoTestResult.Lines.Add('ПОСТРОЕНИЕ АЧХ');
+//  //перебираем все 4 канала
+//  for chNum:=1 to 4 do
+//  begin
+//    form1.mmoTestResult.Lines.Add('Проверка '+intTostr(chNum)+'канала');
+//    SetcoefU(1,chNum);
+//    case chNum  of
+//      1:
+//      begin
+//        SendCommandToISD('http://'+ISDip_2+'/type=2num=58val=1'); // комут генер
+//        SendCommandToISD('http://'+ISDip_2+'/type=2num=53val=1'); // комут вх по напряжению
+//        SendCommandToISD('http://'+ISDip_2+'/type=3num=33val=1'); // комут вых 1
+//        //SendCommandToISD('http://'+ISDip_2+'/type=2num=31val=1');
+//
+//        SendCommandToISD('http://'+ISDip_2+'/type=2num=28val=0');
+//        SendCommandToISD('http://'+ISDip_2+'/type=2num=29val=0');
+//        SendCommandToISD('http://'+ISDip_2+'/type=2num=30val=0');
+//
+//        SetConf(m_instr_usbtmc_1[0],'CONF:VOLT:AC 1');
+//      end;
+//      2:
+//      begin
+//        SendCommandToISD('http://'+ISDip_2+'/type=2num=28val=0');
+//        SendCommandToISD('http://'+ISDip_2+'/type=2num=29val=0');
+//        SendCommandToISD('http://'+ISDip_2+'/type=2num=30val=0');
+//
+//        SendCommandToISD('http://'+ISDip_2+'/type=2num=58val=0');
+//        SendCommandToISD('http://'+ISDip_2+'/type=2num=53val=0');
+//        SendCommandToISD('http://'+ISDip_2+'/type=3num=33val=0');
+//
+//        SendCommandToISD('http://'+ISDip_2+'/type=2num=58val=1');
+//        SendCommandToISD('http://'+ISDip_2+'/type=2num=54val=1');
+//        SendCommandToISD('http://'+ISDip_2+'/type=3num=34val=1');
+//        SendCommandToISD('http://'+ISDip_2+'/type=2num=38val=1');
+//
+//        SendCommandToISD('http://'+ISDip_2+'/type=2num=35val=0');
+//        SendCommandToISD('http://'+ISDip_2+'/type=2num=36val=0');
+//        SendCommandToISD('http://'+ISDip_2+'/type=2num=37val=0');
+//      end;
+//      3:
+//      begin
+//        SendCommandToISD('http://'+ISDip_2+'/type=2num=35val=0');
+//        SendCommandToISD('http://'+ISDip_2+'/type=2num=36val=0');
+//        SendCommandToISD('http://'+ISDip_2+'/type=2num=37val=0');
+//        SendCommandToISD('http://'+ISDip_2+'/type=2num=58val=0');
+//        SendCommandToISD('http://'+ISDip_2+'/type=2num=54val=0');
+//        SendCommandToISD('http://'+ISDip_2+'/type=3num=34val=0');
+//
+//        SendCommandToISD('http://'+ISDip_2+'/type=2num=58val=1');
+//        SendCommandToISD('http://'+ISDip_2+'/type=2num=55val=1');
+//        SendCommandToISD('http://'+ISDip_2+'/type=3num=35val=1');
+//        SendCommandToISD('http://'+ISDip_2+'/type=2num=45val=1');
+//
+//        SendCommandToISD('http://'+ISDip_2+'/type=2num=42val=0');
+//        SendCommandToISD('http://'+ISDip_2+'/type=2num=43val=0');
+//        SendCommandToISD('http://'+ISDip_2+'/type=2num=44val=0');
+//      end;
+//      4:
+//      begin
+//        SendCommandToISD('http://'+ISDip_2+'/type=2num=42val=0');
+//        SendCommandToISD('http://'+ISDip_2+'/type=2num=43val=0');
+//        SendCommandToISD('http://'+ISDip_2+'/type=2num=44val=0');
+//        SendCommandToISD('http://'+ISDip_2+'/type=2num=58val=0');
+//        SendCommandToISD('http://'+ISDip_2+'/type=2num=55val=0');
+//        SendCommandToISD('http://'+ISDip_2+'/type=3num=35val=0');
+//
+//        SendCommandToISD('http://'+ISDip_2+'/type=2num=58val=1');
+//        SendCommandToISD('http://'+ISDip_2+'/type=2num=56val=1');
+//        SendCommandToISD('http://'+ISDip_2+'/type=3num=36val=1');
+//        SendCommandToISD('http://'+ISDip_2+'/type=2num=64val=1');
+//
+//        SendCommandToISD('http://'+ISDip_2+'/type=2num=61val=0');
+//        SendCommandToISD('http://'+ISDip_2+'/type=2num=62val=0');
+//        SendCommandToISD('http://'+ISDip_2+'/type=2num=63val=0');
+//      end;
+//    end;
+//
+//    if (isTestCloseFl) then
+//    begin
+//      Break;
+//    end;
+//
+//    //перебираем частотные диапазоны для каждого канала
+//    for freqNum:=6 to 6 do    // 1-8 все. Мы проверяем только 2048 6-6
+//    begin
+//      if (isTestCloseFl) then
+//      begin
+//        Break;
+//      end;
+//
+//      rezFlag:=true;
+//
+//      SetFrequencyOnGenerator(200000,6,m_instr_usbtmc_2[1]);   //!!
+//      Delay_ms(10);
+//      //wait(500);
+//      voltmetrValue:=GetVoltmetrValue(m_instr_usbtmc_1[0]);
+//      Delay_ms(10);
+//      //wait(500);
+//      voltmetrValue:=GetVoltmetrValue(m_instr_usbtmc_1[0]);
+//      Delay_ms(10);
+//      //wait(500);
+//      parazit:=voltmetrValue;
+//      SetConf(m_instr_usbtmc_1[0],'CONF:VOLT:AC 10');
+//
+//
+//
+//      case freqNum of
+//        1:
+//        begin
+//          form1.mmoTestResult.Lines.Add('Верхняя полоса пропускания 63 Гц, нижняя 0.5 Гц');
+//          case chNum  of
+//            1:
+//            begin
+//              SetFrequencyOnGenerator(200000,6,m_instr_usbtmc_2[1]);   //!!
+//              Delay_ms(10);
+//              //wait(500);
+//              voltmetrValue:=GetVoltmetrValue(m_instr_usbtmc_1[0]);
+//              Delay_ms(10);
+//              //wait(500);
+//              voltmetrValue:=GetVoltmetrValue(m_instr_usbtmc_1[0]);
+//              Delay_ms(10);
+//              //wait(500);
+//              parazit:=voltmetrValue;
+//              SetConf(m_instr_usbtmc_1[0],'CONF:VOLT:AC 10');
+//            end;
+//            2:
+//            begin
+//              Delay_ms(10);
+//              //wait(500);
+//              VoltmetrValue:=GetVoltmetrValue(m_instr_usbtmc_1[0]);
+//              Delay_ms(10);
+//              //wait(500);
+//              parazit:=VoltmetrValue;
+//            end;
+//            3:
+//            begin
+//              Delay_ms(10);
+//              //wait(500);
+//              voltmetrValue:=GetVoltmetrValue(m_instr_usbtmc_1[0]);
+//              Delay_ms(10);
+//              //wait(500);
+//              parazit:=voltmetrValue;
+//            end;
+//            4:
+//            begin
+//              Delay_ms(10);
+//              //wait(500);
+//              VoltmetrValue:=GetVoltmetrValue(m_instr_usbtmc_1[0]);
+//              Delay_ms(10);
+//              //wait(500);
+//              parazit:=VoltmetrValue;
+//            end;
+//          end;
+//
+//        end;
+//        2:
+//        begin
+//          form1.mmoTestResult.Lines.Add('Верхняя полоса пропускания 125 Гц, нижняя 0.5 Гц');
+//          case chNum  of
+//            1:
+//            begin
+//              SendCommandToISD('http://'+ISDip_2+'/type=2num=28val=1');
+//              SendCommandToISD('http://'+ISDip_2+'/type=2num=29val=0');
+//              SendCommandToISD('http://'+ISDip_2+'/type=2num=30val=0');
+//            end;
+//            2:
+//            begin
+//              SendCommandToISD('http://'+ISDip_2+'/type=2num=35val=1');
+//              SendCommandToISD('http://'+ISDip_2+'/type=2num=36val=0');
+//              SendCommandToISD('http://'+ISDip_2+'/type=2num=37val=0');
+//            end;
+//            3:
+//            begin
+//              SendCommandToISD('http://'+ISDip_2+'/type=2num=42val=1');
+//              SendCommandToISD('http://'+ISDip_2+'/type=2num=43val=0');
+//              SendCommandToISD('http://'+ISDip_2+'/type=2num=44val=0');
+//            end;
+//            4:
+//            begin
+//              SendCommandToISD('http://'+ISDip_2+'/type=2num=61val=1');
+//              SendCommandToISD('http://'+ISDip_2+'/type=2num=62val=0');
+//              SendCommandToISD('http://'+ISDip_2+'/type=2num=63val=0');
+//            end;
+//          end;
+//        end;
+//        3:
+//        begin
+//          form1.mmoTestResult.Lines.Add('Верхняя полоса пропускания 250 Гц, нижняя 0.5 Гц');
+//          case chNum  of
+//            1:
+//            begin
+//              SendCommandToISD('http://'+ISDip_2+'/type=2num=28val=0');
+//              SendCommandToISD('http://'+ISDip_2+'/type=2num=29val=1');
+//              SendCommandToISD('http://'+ISDip_2+'/type=2num=30val=0');
+//            end;
+//            2:
+//            begin
+//              SendCommandToISD('http://'+ISDip_2+'/type=2num=35val=0');
+//              SendCommandToISD('http://'+ISDip_2+'/type=2num=36val=1');
+//              SendCommandToISD('http://'+ISDip_2+'/type=2num=37val=0');
+//            end;
+//            3:
+//            begin
+//              SendCommandToISD('http://'+ISDip_2+'/type=2num=42val=0');
+//              SendCommandToISD('http://'+ISDip_2+'/type=2num=43val=1');
+//              SendCommandToISD('http://'+ISDip_2+'/type=2num=44val=0');
+//            end;
+//            4:
+//            begin
+//              SendCommandToISD('http://'+ISDip_2+'/type=2num=61val=0');
+//              SendCommandToISD('http://'+ISDip_2+'/type=2num=62val=1');
+//              SendCommandToISD('http://'+ISDip_2+'/type=2num=63val=0');
+//            end;
+//          end;
+//        end;
+//        4:
+//        begin
+//          form1.mmoTestResult.Lines.Add('Верхняя полоса пропускания 500 Гц, нижняя 20 Гц');
+//          case chNum  of
+//            1:
+//            begin
+//              SendCommandToISD('http://'+ISDip_2+'/type=2num=31val=0');
+//              SendCommandToISD('http://'+ISDip_2+'/type=2num=28val=1');
+//              SendCommandToISD('http://'+ISDip_2+'/type=2num=29val=1');
+//              SendCommandToISD('http://'+ISDip_2+'/type=2num=30val=0');
+//            end;
+//            2:
+//            begin
+//              SendCommandToISD('http://'+ISDip_2+'/type=2num=38val=0');
+//              SendCommandToISD('http://'+ISDip_2+'/type=2num=35val=1');
+//              SendCommandToISD('http://'+ISDip_2+'/type=2num=36val=1');
+//              SendCommandToISD('http://'+ISDip_2+'/type=2num=37val=0');
+//            end;
+//            3:
+//            begin
+//              SendCommandToISD('http://'+ISDip_2+'/type=2num=45val=0');
+//              SendCommandToISD('http://'+ISDip_2+'/type=2num=42val=1');
+//              SendCommandToISD('http://'+ISDip_2+'/type=2num=43val=1');
+//              SendCommandToISD('http://'+ISDip_2+'/type=2num=44val=0');
+//            end;
+//            4:
+//            begin
+//              SendCommandToISD('http://'+ISDip_2+'/type=2num=64val=0');
+//              SendCommandToISD('http://'+ISDip_2+'/type=2num=61val=1');
+//              SendCommandToISD('http://'+ISDip_2+'/type=2num=62val=1');
+//              SendCommandToISD('http://'+ISDip_2+'/type=2num=63val=0');
+//            end;
+//          end;
+//        end;
+//        5:
+//        begin
+//          form1.mmoTestResult.Lines.Add('Верхняя полоса пропускания 1024 Гц, нижняя 20 Гц');
+//          case chNum  of
+//            1:
+//            begin
+//              SendCommandToISD('http://'+ISDip_2+'/type=2num=28val=0');
+//              SendCommandToISD('http://'+ISDip_2+'/type=2num=29val=0');
+//              SendCommandToISD('http://'+ISDip_2+'/type=2num=30val=1');
+//            end;
+//            2:
+//            begin
+//              SendCommandToISD('http://'+ISDip_2+'/type=2num=35val=0');
+//              SendCommandToISD('http://'+ISDip_2+'/type=2num=36val=0');
+//              SendCommandToISD('http://'+ISDip_2+'/type=2num=37val=1');
+//            end;
+//            3:
+//            begin
+//              SendCommandToISD('http://'+ISDip_2+'/type=2num=42val=0');
+//              SendCommandToISD('http://'+ISDip_2+'/type=2num=43val=0');
+//              SendCommandToISD('http://'+ISDip_2+'/type=2num=44val=1');
+//            end;
+//            4:
+//            begin
+//              SendCommandToISD('http://'+ISDip_2+'/type=2num=61val=0');
+//              SendCommandToISD('http://'+ISDip_2+'/type=2num=62val=0');
+//              SendCommandToISD('http://'+ISDip_2+'/type=2num=63val=1');
+//            end;
+//          end;
+//        end;
+//        6:
+//        begin
+//          form1.mmoTestResult.Lines.Add('Верхняя полоса пропускания 2048 Гц, нижняя 20 Гц');
+//          case chNum  of
+//            1:
+//            begin
+//              SendCommandToISD('http://'+ISDip_2+'/type=2num=28val=1');
+//              SendCommandToISD('http://'+ISDip_2+'/type=2num=29val=0');
+//              SendCommandToISD('http://'+ISDip_2+'/type=2num=30val=1');
+//            end;
+//            2:
+//            begin
+//              SendCommandToISD('http://'+ISDip_2+'/type=2num=35val=1');
+//              SendCommandToISD('http://'+ISDip_2+'/type=2num=36val=0');
+//              SendCommandToISD('http://'+ISDip_2+'/type=2num=37val=1');
+//            end;
+//            3:
+//            begin
+//              SendCommandToISD('http://'+ISDip_2+'/type=2num=42val=1');
+//              SendCommandToISD('http://'+ISDip_2+'/type=2num=43val=0');
+//              SendCommandToISD('http://'+ISDip_2+'/type=2num=44val=1');
+//            end;
+//            4:
+//            begin
+//              SendCommandToISD('http://'+ISDip_2+'/type=2num=61val=1');
+//              SendCommandToISD('http://'+ISDip_2+'/type=2num=62val=0');
+//              SendCommandToISD('http://'+ISDip_2+'/type=2num=63val=1');
+//            end;
+//          end;
+//        end;
+//        7:
+//        begin
+//          form1.mmoTestResult.Lines.Add('Верхняя полоса пропускания 4096 Гц, нижняя 20 Гц');
+//          case chNum  of
+//            1:
+//            begin
+//              SendCommandToISD('http://'+ISDip_2+'/type=2num=28val=0');
+//              SendCommandToISD('http://'+ISDip_2+'/type=2num=29val=1');
+//              SendCommandToISD('http://'+ISDip_2+'/type=2num=30val=1');
+//            end;
+//            2:
+//            begin
+//              SendCommandToISD('http://'+ISDip_2+'/type=2num=35val=0');
+//              SendCommandToISD('http://'+ISDip_2+'/type=2num=36val=1');
+//              SendCommandToISD('http://'+ISDip_2+'/type=2num=37val=1');
+//            end;
+//            3:
+//            begin
+//              SendCommandToISD('http://'+ISDip_2+'/type=2num=42val=0');
+//              SendCommandToISD('http://'+ISDip_2+'/type=2num=43val=1');
+//              SendCommandToISD('http://'+ISDip_2+'/type=2num=44val=1');
+//            end;
+//            4:
+//            begin
+//              SendCommandToISD('http://'+ISDip_2+'/type=2num=61val=0');
+//              SendCommandToISD('http://'+ISDip_2+'/type=2num=62val=1');
+//              SendCommandToISD('http://'+ISDip_2+'/type=2num=63val=1');
+//            end;
+//          end;
+//        end;
+//        8:
+//        begin
+//          form1.mmoTestResult.Lines.Add('Верхняя полоса пропускания 8192 Гц, нижняя 20 Гц');
+//          case chNum  of
+//            1:
+//            begin
+//              SendCommandToISD('http://'+ISDip_2+'/type=2num=28val=1');
+//              SendCommandToISD('http://'+ISDip_2+'/type=2num=29val=1');
+//              SendCommandToISD('http://'+ISDip_2+'/type=2num=30val=1');
+//            end;
+//            2:
+//            begin
+//              SendCommandToISD('http://'+ISDip_2+'/type=2num=35val=1');
+//              SendCommandToISD('http://'+ISDip_2+'/type=2num=36val=1');
+//              SendCommandToISD('http://'+ISDip_2+'/type=2num=37val=1');
+//            end;
+//            3:
+//            begin
+//              SendCommandToISD('http://'+ISDip_2+'/type=2num=42val=1');
+//              SendCommandToISD('http://'+ISDip_2+'/type=2num=43val=1');
+//              SendCommandToISD('http://'+ISDip_2+'/type=2num=44val=1');
+//            end;
+//            4:
+//            begin
+//              SendCommandToISD('http://'+ISDip_2+'/type=2num=61val=1');
+//              SendCommandToISD('http://'+ISDip_2+'/type=2num=62val=1');
+//              SendCommandToISD('http://'+ISDip_2+'/type=2num=63val=1');
+//            end;
+//          end;
+//        end;
+//      end;
+//
+//      if (isTestCloseFl) then
+//      begin
+//        Break;
+//      end;
+//
+//      //
+//      for i:=1 to 12 do
+//      begin
+//        if (isTestCloseFl) then
+//        begin
+//          Break;
+//        end;
+//        SetFrequencyOnGenerator(Values[freqNum,i],6,m_instr_usbtmc_2[1]);
+//        //wait(500);
+//        Delay_ms(10);
+//        VoltmetrValue:=GetVoltmetrValue(m_instr_usbtmc_1[0]);
+//        Delay_ms(10);
+//        //wait(500);
+//        N[i]:=VoltmetrValue-parazit;
+//        if N[i]<0 then
+//        begin
+//          N[i]:=0.001;
+//        end;
+//        Form1.lnsrsSeries9.AddXY(Values[freqNum,i],N[i]);
+//
+//        if (isTestCloseFl) then
+//        begin
+//          Break;
+//        end;
+//      end;
+//
+//      for i:=1 to 3 do
+//      begin
+//        if (isTestCloseFl) then
+//        begin
+//          Break;
+//        end;
+//        form1.mmoTestResult.Lines.Add('Частота: '+Floattostr(Values[freqNum,i])+
+//        ' ГЦ; Амплитуда: '+FloatToStrF(N[i],fffixed,5,4));
+//      end;
+//
+//      if ((freqNum=1)or(freqNum=6)or(freqNum=7)or(freqNum=8))then
+//      begin
+//        amplsr:=(N[4]+N[5]+N[6]+N[7])/4;
+//      end
+//      else
+//      begin
+//        amplsr:=(N[5]+N[6]+N[7])/3;
+//      end;
+//
+//      for i:=4 to 7 do
+//      begin
+//        if (isTestCloseFl) then
+//        begin
+//          Break;
+//        end;
+//
+//        if (N[i]<(amplsr*0.94))or(N[i]>(amplsr*1.06)) then
+//        begin
+//         rezFlag:=false;
+//          form1.mmoTestResult.Lines.Add('Частота: '+Floattostr(Values[freqNum,i])+
+//            ' ГЦ; Амплитуда: '+FloatToStrF(N[i],fffixed,5,4)+
+//            ' Погрешность: '+FloattostrF(abs(((N[i]-amplsr)*100)/amplsr),fffixed,3,2)+
+//            '%  !!! НЕ НОРМА !!!');
+//        end
+//        else
+//        begin
+//          form1.mmoTestResult.Lines.Add('Частота: '+Floattostr(Values[freqNum,i])+
+//            ' ГЦ; Амплитуда: '+FloatToStrF(N[i],fffixed,5,4)+
+//            ' Погрешность: '+FloattostrF(abs(((N[i]-amplsr)*100)/amplsr),fffixed,3,2)+
+//            '% НОРМА');
+//        end;
+//        Form1.lnsrsSeries10.AddXY(Values[freqNum,i],(amplsr*1.06));
+//        Form1.lnsrsSeries11.AddXY(Values[freqNum,i],(amplsr*0.94));
+//
+//        if (isTestCloseFl) then
+//        begin
+//          Break;
+//        end;
+//      end;
+//
+//      form1.mmoTestResult.Lines.Add('Частота: '+Floattostr(Values[freqNum,8])+
+//        ' ГЦ; Амплитуда: '+FloatToStrF(N[8],fffixed,5,4));
+//
+//      if (N[8]<(amplsr*0.7))or(N[10]>(amplsr*0.7)) then
+//      begin
+//        rezFlag:=false;
+//        form1.mmoTestResult.Lines.Add('Частота: '+Floattostr(Values[freqNum,9])+
+//          ' ГЦ; Амплитуда: '+FloatToStrF(N[9],fffixed,5,4)+' !!! НЕ НОРМА !!!');
+//      end
+//      else
+//      begin
+//        form1.mmoTestResult.Lines.Add('Частота: '+Floattostr(Values[freqNum,9])+
+//          ' ГЦ; Амплитуда: '+FloatToStrF(N[9],fffixed,5,4)+' НОРМА');
+//      end;
+//
+//      for i:=10 to 12 do
+//      begin
+//        if (isTestCloseFl) then
+//        begin
+//          Break;
+//        end;
+//        form1.mmoTestResult.Lines.Add('Частота: '+Floattostr(Values[freqNum,i])+
+//          ' ГЦ; Амплитуда: '+FloatToStrF(N[i],fffixed,5,4));
+//      end;
+//
+//      if (not rezFlag) then
+//      begin
+//        form1.mmoTestResult.Lines.Add('!!! НЕ НОРМА !!!');
+//        rezFlagTestF:=false;
+//        //DeviceTestRezultFlag:=false;
+//        //RezultFlag3:=false;
+//      end
+//      else
+//      begin
+//        form1.mmoTestResult.Lines.Add('НОРМА');
+//      end;
+//
+//      form1.mmoTestResult.Lines.Add('');
+//      Delay_ms(10);
+//      //wait(500);
+//      Form1.lnsrsSeries9.Clear;
+//      Form1.lnsrsSeries10.Clear;
+//      Form1.lnsrsSeries11.Clear;
+//      //
+//    end;
+//  end;
+//
+//  Form1.achxG.Series[0].Clear;
+//  Form1.achxG.Series[1].Clear;
+//  Form1.achxG.Series[2].Clear;
+//  Application.ProcessMessages;
+//
+//  if (not rezFlagTestF) then
+//  begin
+//    form1.mmoTestResult.Lines.Add('ПРОВЕРКА ВЕРХНЕЙ ПОЛОСЫ ПРОПУСКАНИЯ И НЕРАВНОМЕРНОСТИ ЧАСТОТНОЙ ХАРАКТЕРИСТИКИ:  !!! НЕ НОРМА !!!');
+//    allTestFlag:=False;
+//    //DeviceTestRezultFlag:=false;
+//    //RezultFlag3:=false;
+//  end
+//  else
+//  begin
+//    form1.mmoTestResult.Lines.Add('ПРОВЕРКА ВЕРХНЕЙ ПОЛОСЫ ПРОПУСКАНИЯ И НЕРАВНОМЕРНОСТИ ЧАСТОТНОЙ ХАРАКТЕРИСТИКИ:  НОРМА');
+//  end;
+//
+//  form1.PageControl1.ActivePageIndex:=1;
+//
+//
+//  SetConf(m_instr_usbtmc_1[0],'CONF:VOLT:DC 10');
+//  //form1.mmoTestResult.Lines.Add('');
+//  //form1.mmoTestResult.Lines.Add('Установленное значение напряжения калибровки 6,2В: '+FloatToStrF(setCalibrVoltage(ISDip_2,m_instr_usbtmc_1[0]),ffFixed,6,4));       //Устанавливаем на ИСД напряжение калибровки 6,2В
+//  //SetGNDVoltage(ISDip_2,m_instr_usbtmc_1[0]);
+//  form1.mmoTestResult.Lines.Add('');
+//  //доразмыкаем используемые ранее каналы ИСД
+//  SendCommandToISD('http://'+ISDip_2+'/type=2num=31val=0');
+//  SendCommandToISD('http://'+ISDip_2+'/type=2num=38val=0');
+//  SendCommandToISD('http://'+ISDip_2+'/type=2num=45val=0');
+//  SendCommandToISD('http://'+ISDip_2+'/type=2num=58val=0');
+//  SendCommandToISD('http://'+ISDip_2+'/type=2num=56val=0');
+//  SendCommandToISD('http://'+ISDip_2+'/type=2num=36val=0');
+//  SendCommandToISD('http://'+ISDip_2+'/type=2num=64val=0');
+//  SendCommandToISD('http://'+ISDip_2+'/type=2num=61val=0');
+//  SendCommandToISD('http://'+ISDip_2+'/type=2num=62val=0');
+//  SendCommandToISD('http://'+ISDip_2+'/type=2num=63val=0');
+//  SendCommandToISD('http://'+ISDip_2+'/type=3num=36val=0');
 
 
   //
